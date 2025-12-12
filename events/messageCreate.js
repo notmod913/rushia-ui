@@ -24,6 +24,18 @@ module.exports = {
                 return;
             }
             
+            if (content.toLowerCase() === 'perms') {
+                const { handlePermsCheck } = require('../utils/permsChecker');
+                await handlePermsCheck(message);
+                return;
+            }
+            
+            if (content.toLowerCase() === 'perms') {
+                const { handlePermsCheck } = require('../utils/permsChecker');
+                await handlePermsCheck(message);
+                return;
+            }
+            
             const match = content.match(/^(f|find)\s+(.+)$/i);
             if (match) {
                 const cardSearch = require('../systems/cardSearchSystem');
