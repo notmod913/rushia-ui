@@ -1,6 +1,7 @@
 const { parseBossEmbed } = require('../utils/embedParser');
 const { getSettings } = require('../utils/settingsManager');
 const { sendLog, sendError } = require('../utils/logger');
+const { PermissionsBitField } = require('discord.js');
 
 async function processBossMessage(message) {
   if (!message.guild || !message.embeds.length) return;
@@ -16,7 +17,6 @@ async function processBossMessage(message) {
   
   // Check if multi-role system is enabled
   if (settings.multiRoleEnabled) {
-    // Map tier to role field
     const tierMap = {
       'Tier 1': 'tier1RoleId',
       'Tier 2': 'tier2RoleId',
@@ -28,12 +28,38 @@ async function processBossMessage(message) {
       roleId = settings[roleField];
     }
   } else {
-    // Use legacy single role
     roleId = settings.bossRoleId;
   }
 
   if (roleId) {
     try {
+      const role = message.guild.roles.cache.get(roleId);
+      if (!role) {
+        await sendLog(`[BOSS ERROR] Role not found: ${roleId} in guild ${message.guild.name}`, { 
+          guildId: message.guild.id,
+          error: 'ROLE_NOT_FOUND'
+        });
+        return;
+      }
+
+      const botMember = message.guild.members.me;
+      const hasMentionPerm = message.channel.permissionsFor(botMember).has(PermissionsBitField.Flags.MentionEveryone);
+      const botAboveRole = botMember.roles.highest.position > role.position;
+      const roleIsMentionable = role.mentionable;
+
+      if (!hasMentionPerm && !botAboveRole && !roleIsMentionable) {
+        await sendLog(`[BOSS PERM ERROR] Missing permissions to ping role "${role.name}" in channel #${message.channel.name} (${message.guild.name})`, {
+          guildId: message.guild.id,
+          channelId: message.channel.id,
+          roleId: roleId,
+          roleName: role.name,
+          channelName: message.channel.name,
+          serverName: message.guild.name,
+          error: 'MISSING_PING_PERMISSION'
+        });
+        return;
+      }
+
       const content = `<@&${roleId}> **${bossInfo.tier} Boss Spawned!**\nBoss: **${bossInfo.bossName}**`;
       await message.channel.send({ content, allowedMentions: { roles: [roleId] } });
       await sendLog(`[BOSS DETECTED] ${bossInfo.bossName} (${bossInfo.tier}) in guild ${message.guild.name}`);
