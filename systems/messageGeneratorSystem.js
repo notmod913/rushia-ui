@@ -141,7 +141,7 @@ async function processInventoryEmbed(message) {
     } catch (error) {
       console.error('Failed to react to inventory:', error);
     }
-  } else if (embed.title.includes('Team')) {
+  } else if (embed.description && /^\d+\.\s+\w+\s+\(ID:\s*`\d+`\)/m.test(embed.description)) {
     try {
       await message.react('🆔');
     } catch (error) {
@@ -236,7 +236,7 @@ async function handleIDExtractorReaction(reaction, user) {
     const cards = parseInventoryEmbed(embed);
     if (!cards.length) return;
     ids = cards.map(card => card.id);
-  } else if (embed.title && embed.title.includes('Team')) {
+  } else if (embed.description && /^\d+\.\s+\w+\s+\(ID:\s*`\d+`\)/m.test(embed.description)) {
     ids = parseTeamEmbed(embed);
     if (!ids.length) return;
   } else {
