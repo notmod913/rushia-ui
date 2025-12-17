@@ -58,7 +58,7 @@ const fields = [
       "Opening Guard",
       "Last Stand",
       "Guardian Angel",
-      "provoke"
+      "provoke",
       "Mending Light",
       "War Chant",
       "Remembrance",
