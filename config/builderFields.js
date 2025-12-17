@@ -57,14 +57,20 @@ const fields = [
     values: [
       "Opening Guard",
       "Last Stand",
+      "Guardian Angel",
+      "provoke"
       "Mending Light",
       "War Chant",
+      "Remembrance",
       "Riposte",
       "Bloodlust",
+      "True Strike",
       "Shadowstep",
       "Phantom Rebound",
+      "Lingering Venom",
       "Checkmate",
-      "Mind Games"
+      "Mind Games",
+      "Pieces in Play"
     ]
   },
 
