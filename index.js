@@ -153,13 +153,30 @@ async function deployCommands(client) {
       DatabaseManager.cleanup().catch(console.error);
     }, 24 * 60 * 60 * 1000); // Daily
 
-    client.once(Events.ClientReady, async readyClient => {
+  client.once(Events.ClientReady, async readyClient => {
         await sendLog(`[${readyClient.user.username}] Bot logged in as ${readyClient.user.tag}`);
         await initializeSettings();
         await initializeUserSettings();
         startScheduler(readyClient);
         
-        readyClient.user.setActivity('Helping with game notifications', { type: ActivityType.Playing });
+        const activities = [
+          { name: 'boss spawns', type: ActivityType.Watching },
+          { name: 'raid fatigue', type: ActivityType.Listening },
+          { name: 'expeditions', type: ActivityType.Watching },
+          { name: 'stamina refills', type: ActivityType.Listening },
+          { name: 'card alerts', type: ActivityType.Watching },
+          { name: 'game notifications', type: ActivityType.Playing }
+        ];
+        
+        let activityIndex = 0;
+        const updateActivity = () => {
+          readyClient.user.setActivity(activities[activityIndex].name, { type: activities[activityIndex].type });
+          activityIndex = (activityIndex + 1) % activities.length;
+        };
+        
+        updateActivity();
+        setInterval(updateActivity, 20000);
+        
         console.log(`✅ ${readyClient.user.tag} is online and ready!`);
     });
 
