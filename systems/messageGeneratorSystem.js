@@ -1,6 +1,7 @@
 const { ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { LUVI_BOT_ID } = require('../config/constants');
 const fields = require('../config/builderFields.js');
+const { handleIDExtractorReaction } = require('./idfetchsystem');
 
 const generatorData = new Map();
 const availableFields = fields.filter(field => field.key !== 'name' && field.values && field.values.length > 0);
@@ -150,18 +151,7 @@ async function processInventoryEmbed(message) {
   }
 }
 
-function parseTeamEmbed(embed) {
-  const ids = [];
-  const text = embed.description || '';
-  const matches = text.match(/ID:\s*`(\d+)`/g);
-  if (matches) {
-    matches.forEach(match => {
-      const id = match.match(/\d+/)[0];
-      ids.push(id);
-    });
-  }
-  return ids;
-}
+
 
 async function handleGeneratorReaction(reaction, user) {
   if (user.bot) return;
@@ -220,36 +210,7 @@ async function handleCommandBuilderReaction(reaction, user) {
   }
 }
 
-async function handleIDExtractorReaction(reaction, user) {
-  const message = reaction.message;
-  if (!message.embeds.length) return;
-  const embed = message.embeds[0];
-  try {
-    await reaction.users.remove(user);
-    await reaction.users.remove(reaction.client.user);
-  } catch (error) {
-    console.error('Failed to remove reactions:', error);
-  }
-  
-  let ids = [];
-  if (embed.title && embed.title.includes('<:LU_Inventory:') && embed.title.includes("'s Inventory")) {
-    const cards = parseInventoryEmbed(embed);
-    if (!cards.length) return;
-    ids = cards.map(card => card.id);
-  } else if (embed.description && /^\d+\.\s+\w+\s+\(ID:\s*`\d+`\)/m.test(embed.description)) {
-    ids = parseTeamEmbed(embed);
-    if (!ids.length) return;
-  } else {
-    return;
-  }
-  
-  const idList = ids.join(',');
-  try {
-    await message.channel.send(idList || 'No cards');
-  } catch (error) {
-    console.error('Failed to send ID list:', error);
-  }
-}
+
 
 async function handleNameSelect(interaction) {
   if (!interaction.customId.startsWith('name_select_')) return false;
@@ -544,35 +505,7 @@ function startInventoryWatcher(userId, inventoryMessage) {
   setTimeout(() => clearInterval(checkInterval), 10 * 60 * 1000);
 }
 
-function startIDWatcher(userId, inventoryMessage) {
-  const checkInterval = setInterval(async () => {
-    const userData = generatorData.get(`idextractor_${userId}`);
-    if (!userData) {
-      clearInterval(checkInterval);
-      return;
-    }
-    try {
-      const channel = await inventoryMessage.client.channels.fetch(userData.inventoryChannelId);
-      const message = await channel.messages.fetch(userData.inventoryMessageId);
-      if (!message.embeds.length) return;
-      const embed = message.embeds[0];
-      const newCards = parseInventoryEmbed(embed);
-      if (JSON.stringify(newCards) !== JSON.stringify(userData.cards)) {
-        const newIds = newCards.filter(card => !userData.allIds.includes(card.id)).map(card => card.id);
-        userData.cards = newCards;
-        userData.allIds.push(...newIds);
-        const idMessage = generatorData.get(`idmessage_${userId}`);
-        if (idMessage) {
-          await idMessage.edit(userData.allIds.join(',') || 'No cards');
-        }
-      }
-    } catch (error) {
-      console.error('Error in ID watcher:', error);
-      clearInterval(checkInterval);
-    }
-  }, 2000);
-  setTimeout(() => clearInterval(checkInterval), 10 * 60 * 1000);
-}
+
 
 module.exports = {
   processInventoryMessage,
