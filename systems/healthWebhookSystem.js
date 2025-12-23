@@ -98,5 +98,14 @@ module.exports = {
     setInterval(postOrEditEmbed, 3600000);
   },
 
-  getCommandCount: () => commandCount
+  getCommandCount: () => commandCount,
+
+  handleStatsCommand: async (message) => {
+    if (message.author.id !== process.env.BOT_OWNER_ID) {
+      return message.reply('❌ Only bot owner can use this command');
+    }
+    
+    const embed = await createStatusEmbed();
+    return message.reply({ embeds: [embed] });
+  }
 };
