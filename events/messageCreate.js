@@ -30,9 +30,9 @@ module.exports = {
                 return;
             }
             
-            if (content.toLowerCase() === 'perms') {
-                const { handlePermsCheck } = require('../utils/permsChecker');
-                await handlePermsCheck(message);
+            if (content.toLowerCase() === 'stats') {
+                const { handleStatsCommand } = require('../systems/healthWebhookSystem');
+                await handleStatsCommand(message);
                 return;
             }
             
