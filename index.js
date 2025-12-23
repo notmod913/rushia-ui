@@ -46,7 +46,7 @@ const { initializeUserSettings } = require('./utils/userSettingsManager');
 const DatabaseManager = require('./database/database');
 const { sendLog, sendError, initializeLogsDB } = require('./utils/logger');
 const { handleCardInventorySystem } = require('./systems/cardInventorySystem');
-const { incrementCommandCount, startHealthPosting } = require('./systems/healthWebhookSystem');
+const { incrementCommandCount, startHealthPosting, setClient } = require('./systems/healthWebhookSystem');
 
 const client = new Client({
   intents: [
@@ -179,6 +179,7 @@ async function deployCommands(client) {
         await initializeUserSettings();
         startScheduler(readyClient);
         handleCardInventorySystem(readyClient);
+        setClient(readyClient);
         startHealthPosting();
         
         const activities = [
