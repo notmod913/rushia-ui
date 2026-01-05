@@ -1,6 +1,7 @@
 const { Events } = require('discord.js');
 const { processExpeditionMessage } = require('../systems/expeditionReminderSystem');
 const { processRaidMessage } = require('../systems/raidReminderSystem');
+const { processRaidSpawnMessage } = require('../systems/raidSpawnReminderSystem');
 const { LUVI_BOT_ID } = require('../config/constants');
 const CacheManager = require('../optimization/cache');
 
@@ -13,6 +14,7 @@ module.exports = {
         if (CacheManager.getMessage(messageKey)) return;
         CacheManager.setMessage(messageKey, true);
         
+        await processRaidSpawnMessage(newMessage);
         await processExpeditionMessage(newMessage);
         await processRaidMessage(newMessage);
     }
