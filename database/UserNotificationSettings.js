@@ -5,8 +5,10 @@ const userNotificationSettingsSchema = new mongoose.Schema({
   expedition: { type: Boolean, default: true },
   stamina: { type: Boolean, default: true },
   raid: { type: Boolean, default: true },
+  raidSpawn: { type: Boolean, default: true },
   staminaDM: { type: Boolean, default: false },
   expeditionDM: { type: Boolean, default: false },
+  raidSpawnDM: { type: Boolean, default: false },
   raidSpawnReminder: { type: Boolean, default: true },
 });
 

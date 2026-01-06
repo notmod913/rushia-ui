@@ -1,5 +1,6 @@
 const { WebhookClient } = require('discord.js');
 const mongoose = require('mongoose');
+const { addLog } = require('../systems/logsAPI');
 
 const logWebhook = process.env.LOG_WEBHOOK_URL ? new WebhookClient({ url: process.env.LOG_WEBHOOK_URL }) : null;
 const errorWebhook = process.env.ERROR_WEBHOOK_URL ? new WebhookClient({ url: process.env.ERROR_WEBHOOK_URL }) : null;
@@ -123,8 +124,8 @@ async function saveLogToDB(level, message, metadata = {}) {
 }
 
 async function sendLog(message, metadata = {}) {
-  // Save to DB (or buffer) but don't block on DB errors
-  saveLogToDB('INFO', message, metadata).catch(() => { /* intentionally silent here */ });
+  addLog('INFO', metadata.category || 'GENERAL', message, metadata);
+  saveLogToDB('INFO', message, metadata).catch(() => {});
 
   if (logWebhook) {
     try {
@@ -137,7 +138,8 @@ async function sendLog(message, metadata = {}) {
 }
 
 async function sendError(message, metadata = {}) {
-  saveLogToDB('ERROR', message, metadata).catch(() => { /* intentionally silent here */ });
+  addLog('ERROR', metadata.category || 'GENERAL', message, metadata);
+  saveLogToDB('ERROR', message, metadata).catch(() => {});
 
   if (errorWebhook) {
     try {
@@ -150,11 +152,13 @@ async function sendError(message, metadata = {}) {
 }
 
 async function sendWarn(message, metadata = {}) {
-  saveLogToDB('WARN', message, metadata).catch(() => { /* intentionally silent here */ });
+  addLog('WARN', metadata.category || 'GENERAL', message, metadata);
+  saveLogToDB('WARN', message, metadata).catch(() => {});
 }
 
 async function sendDebug(message, metadata = {}) {
-  saveLogToDB('DEBUG', message, metadata).catch(() => { /* intentionally silent here */ });
+  addLog('DEBUG', metadata.category || 'GENERAL', message, metadata);
+  saveLogToDB('DEBUG', message, metadata).catch(() => {});
 }
 
 module.exports = { sendLog, sendError, sendWarn, sendDebug, initializeLogsDB };

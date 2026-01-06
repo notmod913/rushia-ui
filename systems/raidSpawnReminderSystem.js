@@ -31,13 +31,29 @@ async function detectAndSetRaidSpawnReminder(message) {
       reminderMessage: `<@${userId}>, You can now use </raid spawn:1404667045332910220> to spawn a new raid boss!`
     });
     
-    await sendLog(`[RAID SPAWN REMINDER SET] User: ${userId}, Channel: ${message.channel.id}, Message: ${message.url}`);
+    await sendLog(`[RAID SPAWN REMINDER SET] User: ${userId}, Channel: ${message.channel.id}, Message: ${message.url}`, {
+      category: 'RAID_SPAWN',
+      userId,
+      guildId: message.guild.id,
+      channelId: message.channel.id
+    });
   } catch (error) {
     if (error.code === 11000) {
-      console.log(`[INFO] Suppressed duplicate key error for raid spawn reminder. User: ${userId}`);
+      await sendLog(`[RAID SPAWN] Duplicate reminder skipped - User already has active reminder`, {
+        category: 'RAID_SPAWN',
+        userId,
+        guildId: message.guild.id,
+        channelId: message.channel.id,
+        reason: 'duplicate'
+      });
     } else {
-      console.error(`[ERROR] Failed to create raid spawn reminder: ${error.message}`, error);
-      await sendError(`[ERROR] Failed to create raid spawn reminder: ${error.message}`);
+      await sendError(`[RAID SPAWN] Failed to create reminder: ${error.message}`, {
+        category: 'RAID_SPAWN',
+        userId,
+        guildId: message.guild.id,
+        channelId: message.channel.id,
+        error: error.stack
+      });
     }
   }
 }

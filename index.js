@@ -21,6 +21,10 @@ app.post('/webhook/health', (req, res) => {
   res.json({ success: true, message: 'Webhook URL set' });
 });
 
+// Logs API
+const { router: logsRouter } = require('./systems/logsAPI');
+app.use('/api', logsRouter);
+
 app.listen(3001, () => console.log('Health check on port 3001'));
 
 if (process.env.HEALTH_WEBHOOK_URL) {

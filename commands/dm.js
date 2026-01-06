@@ -15,7 +15,8 @@ module.exports = {
             .setRequired(true)
             .addChoices(
               { name: 'Expedition', value: 'expedition' },
-              { name: 'Stamina', value: 'stamina' }
+              { name: 'Stamina', value: 'stamina' },
+              { name: 'Raid Spawn', value: 'raidSpawn' }
             )))
     .addSubcommand(subcommand =>
       subcommand
@@ -27,7 +28,8 @@ module.exports = {
             .setRequired(true)
             .addChoices(
               { name: 'Expedition', value: 'expedition' },
-              { name: 'Stamina', value: 'stamina' }
+              { name: 'Stamina', value: 'stamina' },
+              { name: 'Raid Spawn', value: 'raidSpawn' }
             ))),
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();

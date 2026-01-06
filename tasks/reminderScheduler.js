@@ -58,6 +58,8 @@ async function checkReminders(client) {
             sendInDm = userSettings && userSettings.staminaDM;
           } else if (reminderData.type === 'expedition') {
             sendInDm = userSettings && userSettings.expeditionDM;
+          } else if (reminderData.type === 'raidSpawn') {
+            sendInDm = userSettings && userSettings.raidSpawnDM;
           }
 
           if (sendReminder) {
@@ -65,22 +67,43 @@ async function checkReminders(client) {
               const user = await client.users.fetch(reminderData.userId);
               if (user) {
                 await user.send(reminderData.reminderMessage);
-                await sendLog(`[REMINDER SENT] User: ${reminderData.userId} via DM`);
+                await sendLog(`[REMINDER SENT] Type: ${reminderData.type}, User: ${reminderData.userId} via DM`, {
+                  category: 'REMINDER',
+                  type: reminderData.type,
+                  userId: reminderData.userId,
+                  method: 'DM'
+                });
               }
             } else {
               const channel = await client.channels.fetch(reminderData.channelId);
               if (channel) {
                 await channel.send(reminderData.reminderMessage);
-                await sendLog(`[REMINDER SENT] User: ${reminderData.userId} in Channel: ${reminderData.channelId}`);
+                await sendLog(`[REMINDER SENT] Type: ${reminderData.type}, User: ${reminderData.userId} in Channel: ${reminderData.channelId}`, {
+                  category: 'REMINDER',
+                  type: reminderData.type,
+                  userId: reminderData.userId,
+                  channelId: reminderData.channelId,
+                  method: 'CHANNEL'
+                });
               }
             }
           }
         } catch (error) {
-          if (error.code === 50007) { // Cannot send messages to this user
-            console.log(`User ${reminderData.userId} cannot be DMed. Deleting reminder.`);
+          if (error.code === 50007) {
+            await sendLog(`[REMINDER] Cannot DM user - permissions denied`, {
+              category: 'REMINDER',
+              userId: reminderData.userId,
+              error: 'CANNOT_DM',
+              code: 50007
+            });
           } else {
-            console.error(`Failed to send reminder for user ${reminderData.userId}:`, error);
-            await sendError(`[ERROR] Failed to send reminder for user ${reminderData.userId}:\n${error.message}`);
+            await sendError(`[REMINDER] Failed to send: ${error.message}`, {
+              category: 'REMINDER',
+              userId: reminderData.userId,
+              channelId: reminderData.channelId,
+              type: reminderData.type,
+              error: error.stack
+            });
           }
         }
       })();
@@ -109,7 +132,7 @@ function startScheduler(client) {
   (function schedule() {
     checkReminders(client).finally(() => setTimeout(schedule, SCHEDULER.CHECK_INTERVAL));
   })();
-  sendLog('[SCHEDULER] Reminder scheduler started.');
+  sendLog('[SCHEDULER] Reminder scheduler started.', { category: 'SYSTEM' });
 }
 
 module.exports = { startScheduler };
