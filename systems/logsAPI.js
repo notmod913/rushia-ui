@@ -1,6 +1,5 @@
 const express = require('express');
 const crypto = require('crypto');
-const cors = require('cors');
 
 const router = express.Router();
 
@@ -19,12 +18,6 @@ const authenticate = (req, res, next) => {
   }
   next();
 };
-
-// CORS for your React app
-router.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
-}));
 
 // Store log
 function addLog(level, category, message, metadata = {}) {
