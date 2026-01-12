@@ -69,6 +69,8 @@ module.exports = {
             }
         } else if (interaction.isStringSelectMenu()) {
             try {
+                const { handleReminderInteraction } = require('../utils/reminderViewer');
+                if (await handleReminderInteraction(interaction)) return;
                 const { handleHelpCategory } = require('../commands/help');
                 if (await handleHelpCategory(interaction)) return;
                 if (await handleNameSelect(interaction)) return;
@@ -79,6 +81,8 @@ module.exports = {
             }
         } else if (interaction.isButton()) {
             try {
+                const { handleReminderInteraction } = require('../utils/reminderViewer');
+                if (await handleReminderInteraction(interaction)) return;
                 if (await handleAddName(interaction)) return;
                 if (await handleRemoveName(interaction)) return;
                 if (await handleNextSection(interaction)) return;

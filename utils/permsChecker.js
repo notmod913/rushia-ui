@@ -1,6 +1,10 @@
 const { PermissionsBitField, EmbedBuilder } = require('discord.js');
 
 async function handlePermsCheck(message) {
+    if (message.author.id !== process.env.BOT_OWNER_ID) {
+        return;
+    }
+
     if (!message.guild) {
         return message.reply('This command can only be used in a server.');
     }

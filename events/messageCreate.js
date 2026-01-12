@@ -36,6 +36,14 @@ module.exports = {
                 return;
             }
             
+            if (content.toLowerCase() === 'rem' || content.toLowerCase().startsWith('rem ')) {
+                const { handleReminderView } = require('../utils/reminderViewer');
+                const args = content.toLowerCase().split(' ');
+                const filter = args[1] || null;
+                await handleReminderView(message, filter);
+                return;
+            }
+            
             const match = content.match(/^(f|find)\s+(.+)$/i);
             if (match) {
                 const cardSearch = require('../systems/cardSearchSystem');

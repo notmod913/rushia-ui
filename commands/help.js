@@ -3,7 +3,7 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBui
 const helpCategories = {
   overview: {
     title: '🤖 Rushia Bot - Overview',
-    description: 'Welcome to Luvi Helper Bot! Select a category from the dropdown below to learn more.',
+    description: 'Welcome to Rushia Bot! Select a category from the dropdown below to learn more.',
     fields: [
       { name: '📋 Admin Commands', value: 'Server configuration and role management', inline: true },
       { name: '👤 User Commands', value: 'Personal notification settings', inline: true },
@@ -45,9 +45,9 @@ const helpCategories = {
     title: '📦 Inventory Helper',
     description: 'Interactive inventory management system',
     fields: [
-      { name: 'How to Use', value: 'React with 📦 on your Luvi inventory embed' },
-      { name: 'Features', value: '• Interactive dropdown to select cards\n• Print card names and IDs easily\n• Auto-updates when you change inventory pages' },
-      { name: '🔍 Message Generator', value: 'React with 🔍 on inventory to build custom search commands' }
+      { name: 'How to Use', value: 'React with 🔍 on inventory embed to start' },
+      { name: 'Features', value: '• Select cards from dropdown\n• Add/remove cards to command\n• Configure filters (rarity, element, type, etc.)\n• Auto-updates when you change pages\n• Generates complete inventory command' },
+      { name: 'Command Builder', value: 'Build custom `inv` commands with multiple filters and card names' }
     ]
   },
   auto: {
@@ -57,7 +57,7 @@ const helpCategories = {
       { name: 'Boss Detection', value: 'Auto-detects all tier boss spawns from Luvi bot' },
       { name: 'Card Detection', value: 'Auto-detects all rarity card spawns from Luvi bot' },
       { name: 'Inventory Detection', value: 'Auto-reacts to inventory embeds with 📦 and 🔍' },
-      { name: 'Smart Reminders', value: 'Automatically sets reminders when you:\n• Run out of stamina (100-minute reminder)\n• Send cards on expeditions (completion reminders)\n• Get raid fatigue (recovery reminders)' }
+      { name: 'Smart Reminders', value: 'Automatically sets reminders when you:\n• Run out of stamina (100-minute reminder)\n• Send cards on expeditions (completion reminders)\n• Get raid fatigue (recovery reminders)\n• Spawn a raid (30-minute reminder)' }
     ]
   },
   tips: {
@@ -76,7 +76,7 @@ const helpCategories = {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('help')
-    .setDescription('Shows setup instructions for Luvi Helper Bot'),
+    .setDescription('Shows setup instructions for Rushia Bot'),
 
   async execute(interaction) {
     const embed = new EmbedBuilder()
