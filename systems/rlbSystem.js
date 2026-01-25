@@ -201,16 +201,23 @@ async function handleResetButton(interaction) {
       return interaction.reply({ content: '❌ Only the bot owner or server administrators can reset the leaderboard.', ephemeral: true });
     }
 
-    const guildId = interaction.guild.id;
-    
-    // Delete all drops for this server
-    await Drops.deleteMany({ guildId });
-    await RarityDrop.deleteMany({ guildId });
+    // Show confirmation buttons
+    const yesButton = new ButtonBuilder()
+      .setCustomId(`confirm_reset_${interaction.guild.id}`)
+      .setLabel('Yes')
+      .setStyle(ButtonStyle.Danger);
 
-    await interaction.update({ 
-      content: '✅ Leaderboard has been reset to 0 for this server.', 
-      embeds: [], 
-      components: [] 
+    const noButton = new ButtonBuilder()
+      .setCustomId('cancel_reset')
+      .setLabel('No')
+      .setStyle(ButtonStyle.Secondary);
+
+    const row = new ActionRowBuilder().addComponents(yesButton, noButton);
+
+    await interaction.reply({ 
+      content: '⚠️ Are you sure you want to reset all drop data for this server? This action cannot be undone.', 
+      components: [row],
+      ephemeral: true 
     });
 
   } catch (error) {
@@ -218,4 +225,26 @@ async function handleResetButton(interaction) {
   }
 }
 
-module.exports = { handleRlbCommand, handleRarityButton, handleBackButton, handleResetButton };
+async function handleConfirmReset(interaction) {
+  try {
+    const guildId = interaction.customId.split('_')[2];
+    
+    // Delete all drops for this server
+    await Drops.deleteMany({ guildId });
+    await RarityDrop.deleteMany({ guildId });
+
+    await interaction.update({ 
+      content: '✅ Leaderboard has been reset to 0 for this server.', 
+      components: []
+    });
+
+  } catch (error) {
+    await interaction.update({ content: '❌ An error occurred while resetting.', components: [] });
+  }
+}
+
+async function handleCancelReset(interaction) {
+  await interaction.update({ content: '❌ Reset cancelled.', components: [] });
+}
+
+module.exports = { handleRlbCommand, handleRarityButton, handleBackButton, handleResetButton, handleConfirmReset, handleCancelReset };

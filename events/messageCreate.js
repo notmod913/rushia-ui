@@ -62,7 +62,7 @@ module.exports = {
         }
         
         // Handle prefix commands
-        if (!message.author.bot && message.content.startsWith('r')) {
+        if (!message.author.bot && message.content.toLowerCase().startsWith('r')) {
             const args = message.content.slice(1).trim().split(/\s+/);
             const command = args[0]?.toLowerCase();
             
