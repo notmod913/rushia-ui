@@ -13,9 +13,6 @@ const reminderSchema = new mongoose.Schema({
 // Fast lookup for due reminders
 reminderSchema.index({ remindAt: 1 });
 
-// Fast user-specific queries
-reminderSchema.index({ userId: 1, type: 1 });
-
 // Unique index for expedition reminders (userId + cardId)
 reminderSchema.index({ userId: 1, cardId: 1 }, { unique: true, partialFilterExpression: { type: 'expedition' } });
 

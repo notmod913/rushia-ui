@@ -18,6 +18,47 @@ const GRADE_MAP = {
     'DTier': 'D'
 };
 
+function extractCardsFromComponent(components) {
+    const cards = {};
+    if (!components || components.length === 0) return cards;
+    
+    const container = components.find(c => c.type === 17);
+    if (!container || !container.components) return cards;
+    
+    const cardComponents = container.components.filter(c => 
+        c.type === 10 && c.content && c.content.includes('ID: `')
+    );
+    
+    cardComponents.forEach(comp => {
+        const content = comp.content;
+        const nameMatch = content.match(/\*\*(?:🧭 )?<:LU_([MLEURC]+):[^>]+>\s*([^*]+)\*\*/);
+        
+        if (nameMatch) {
+            const rarityCode = nameMatch[1];
+            let cardName = nameMatch[2].trim();
+            const rarity = RARITY_CODE_MAP[rarityCode];
+            
+            // Check for iconic - only LU_Iconic emoji
+            if (content.includes('<:LU_Iconic:') || content.includes('<:Iconic:')) {
+                cardName = `✨ ${cardName}`;
+            }
+            
+            let grade = '';
+            const gradeMatch = content.match(/:LU_(SPlusTier|STier|ATier|BTier|CTier|DTier):/);
+            if (gradeMatch) {
+                grade = GRADE_MAP[gradeMatch[1]];
+            }
+            
+            if (rarity) {
+                if (!cards[rarity]) cards[rarity] = [];
+                cards[rarity].push({ name: cardName, grade });
+            }
+        }
+    });
+    
+    return cards;
+}
+
 function extractCardsFromEmbed(embed) {
     const cards = {};
     if (!embed.fields) return cards;
@@ -53,4 +94,4 @@ function buildRarityMessage(cards) {
     }).join('\n');
 }
 
-module.exports = { extractCardsFromEmbed, buildRarityMessage };
+module.exports = { extractCardsFromEmbed, extractCardsFromComponent, buildRarityMessage };

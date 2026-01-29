@@ -1,26 +1,49 @@
-const { parseExpeditionEmbed } = require('../utils/embedParser');
+const { parseExpeditionEmbed, parseExpeditionComponent } = require('../utils/embedParser');
 const Reminder = require('../database/Reminder');
 const { sendLog, sendError } = require('../utils/logger');
 
 async function processExpeditionMessage(message) {
-  if (!message.guild || !message.embeds.length) return;
+  if (!message.guild) return;
 
-  const embed = message.embeds[0];
-  const expeditionInfo = parseExpeditionEmbed(embed);
-  if (!expeditionInfo) return;
-
+  let expeditionInfo = null;
   let userId = message.interaction?.user?.id;
 
-  if (!userId && expeditionInfo.username) {
-    try {
-      const members = await message.guild.members.fetch({ query: expeditionInfo.username, limit: 1 });
-      const member = members.first();
-      if (member) userId = member.id;
-      else console.warn(`[WARN] Could not find a guild member with username: ${expeditionInfo.username}`);
-    } catch (err) {
-      console.error(`[ERROR] Failed to fetch member for username: ${expeditionInfo.username}`, err);
+  // Try parsing components first
+  if (message.components && message.components.length > 0) {
+    expeditionInfo = parseExpeditionComponent(message.components);
+    
+    // For component format, try to get userId from username if no interaction
+    if (!userId && expeditionInfo?.username) {
+      try {
+        const members = await message.guild.members.fetch({ query: expeditionInfo.username, limit: 1 });
+        const member = members.first();
+        if (member) {
+          userId = member.id;
+        }
+      } catch (err) {
+        // Silent fail
+      }
     }
   }
+
+  // Fallback to embed parsing (old format)
+  if (!expeditionInfo && message.embeds.length > 0) {
+    const embed = message.embeds[0];
+    expeditionInfo = parseExpeditionEmbed(embed);
+    
+    // For embed format, try to get userId from username
+    if (!userId && expeditionInfo?.username) {
+      try {
+        const members = await message.guild.members.fetch({ query: expeditionInfo.username, limit: 1 });
+        const member = members.first();
+        if (member) userId = member.id;
+      } catch (err) {
+        // Silent fail
+      }
+    }
+  }
+
+  if (!expeditionInfo) return;
 
   if (userId) {
     const now = Date.now();
@@ -39,17 +62,12 @@ async function processExpeditionMessage(message) {
           });
           await sendLog(`[EXPEDITION REMINDER SET] User: ${userId}, Card: ${card.cardName} (${card.cardId}), Channel: ${message.channel.id}, Message ID: ${message.id}, Message Link: ${message.url}`);
         } catch (error) {
-          if (error.code === 11000) {
-            console.log(`[INFO] Suppressed duplicate key error for expedition reminder. User: ${userId}, Card: ${card.cardId}`);
-          } else {
-            console.error(`[ERROR] Failed to create reminder for expedition: ${error.message}`, error);
+          if (error.code !== 11000) {
             await sendError(`[ERROR] Failed to create reminder for expedition: ${error.message}`);
           }
         }
       }
     }
-  } else {
-    console.warn(`[WARN] Could not determine a userId for the expedition message. Title: ${embed.title}`);
   }
 }
 

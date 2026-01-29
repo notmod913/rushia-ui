@@ -1,17 +1,28 @@
-const { parseBossEmbed } = require('../utils/embedParser');
+const { parseBossEmbed, parseBossComponent } = require('../utils/embedParser');
 const { getSettings } = require('../utils/settingsManager');
 const { sendLog, sendError } = require('../utils/logger');
 const { PermissionsBitField } = require('discord.js');
 
 async function processBossMessage(message) {
-  if (!message.guild || !message.embeds.length) return;
+  if (!message.guild) return;
 
-  const embed = message.embeds[0];
+  let bossInfo = null;
+
+  // Try parsing components first (new format)
+  if (message.components && message.components.length > 0) {
+    bossInfo = parseBossComponent(message.components);
+  }
+
+  // Fallback to embed parsing (old format)
+  if (!bossInfo && message.embeds.length > 0) {
+    const embed = message.embeds[0];
+    bossInfo = parseBossEmbed(embed);
+  }
+
+  if (!bossInfo) return;
+
   const settings = getSettings(message.guild.id);
   if (!settings) return;
-
-  const bossInfo = parseBossEmbed(embed);
-  if (!bossInfo) return;
 
   let roleId = null;
   

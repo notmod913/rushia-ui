@@ -6,6 +6,33 @@ const { handleIDExtractorReaction } = require('./idfetchsystem');
 const generatorData = new Map();
 const availableFields = fields.filter(field => field.key !== 'name' && field.values && field.values.length > 0);
 
+function parseInventoryComponent(components) {
+  const cards = [];
+  if (!components || components.length === 0) return cards;
+  
+  const container = components.find(c => c.type === 17);
+  if (!container || !container.components) return cards;
+  
+  const cardComponents = container.components.filter(c => 
+    c.type === 10 && c.content && c.content.includes('ID: `')
+  );
+  
+  cardComponents.forEach((comp, index) => {
+    const content = comp.content;
+    const nameMatch = content.match(/\*\*(?:🧭 )?<:LU_[MLEURC]+:[^>]+>\s*([^*]+)\*\*/);
+    const idMatch = content.match(/ID: `(\d+)`/);
+    const posMatch = content.match(/#(\d+)/);
+    
+    if (nameMatch && idMatch) {
+      let cleanName = nameMatch[1].trim();
+      const position = posMatch ? posMatch[1] : (index + 1).toString();
+      cards.push({ name: cleanName, position, id: idMatch[1] });
+    }
+  });
+  
+  return cards;
+}
+
 function parseInventoryEmbed(embed) {
   const cards = [];
   if (embed.fields && embed.fields.length > 0) {
@@ -114,22 +141,23 @@ function formatSelectedFields(selectedFields) {
     .join('\n');
 }
 
-async function processInventoryMessage(message) {
-  if (message.author.id !== LUVI_BOT_ID) return;
-  if (!message.embeds.length) {
-    setTimeout(async () => {
-      try {
-        const fetchedMessage = await message.channel.messages.fetch(message.id);
-        if (fetchedMessage.embeds.length > 0) {
-          await processInventoryEmbed(fetchedMessage);
-        }
-      } catch (error) {
-        console.error('Error fetching message after delay:', error);
-      }
-    }, 2000);
-    return;
+async function processInventoryComponent(message) {
+  if (!message.components || message.components.length === 0) return;
+  
+  const container = message.components.find(c => c.type === 17);
+  if (!container || !container.components) return;
+  
+  const titleComponent = container.components.find(c => 
+    c.type === 10 && c.content && c.content.includes("<:LU_Inventory:") && c.content.includes("'s Inventory")
+  );
+  
+  if (titleComponent) {
+    try {
+      await message.react('🔍');
+    } catch (error) {
+      console.error('Failed to react to inventory:', error);
+    }
   }
-  await processInventoryEmbed(message);
 }
 
 async function processInventoryEmbed(message) {
@@ -151,6 +179,34 @@ async function processInventoryEmbed(message) {
   }
 }
 
+async function processInventoryMessage(message) {
+  if (message.author.id !== LUVI_BOT_ID) return;
+  
+  // Try components first
+  if (message.components && message.components.length > 0) {
+    await processInventoryComponent(message);
+    return;
+  }
+  
+  // Fallback to embeds
+  if (!message.embeds.length) {
+    setTimeout(async () => {
+      try {
+        const fetchedMessage = await message.channel.messages.fetch(message.id);
+        if (fetchedMessage.components && fetchedMessage.components.length > 0) {
+          await processInventoryComponent(fetchedMessage);
+        } else if (fetchedMessage.embeds.length > 0) {
+          await processInventoryEmbed(fetchedMessage);
+        }
+      } catch (error) {
+        console.error('Error fetching message after delay:', error);
+      }
+    }, 2000);
+    return;
+  }
+  await processInventoryEmbed(message);
+}
+
 
 
 async function handleGeneratorReaction(reaction, user) {
@@ -164,21 +220,46 @@ async function handleGeneratorReaction(reaction, user) {
 
 async function handleCommandBuilderReaction(reaction, user) {
   const message = reaction.message;
-  if (!message.embeds.length) return;
-  const embed = message.embeds[0];
-  if (!embed.title || !embed.title.includes('<:LU_Inventory:') || !embed.title.includes("'s Inventory")) return;
-  const usernameMatch = embed.title.match(/<:LU_Inventory:[^>]+>\s*(.+?)'s Inventory/);
-  if (!usernameMatch) return;
-  const inventoryUsername = usernameMatch[1];
-  if (user.username !== inventoryUsername) return;
+  
+  let inventoryUsername = null;
+  let cards = [];
+  
+  // Try components first
+  if (message.components && message.components.length > 0) {
+    const container = message.components.find(c => c.type === 17);
+    if (container) {
+      const titleComponent = container.components.find(c => 
+        c.type === 10 && c.content && c.content.includes("'s Inventory")
+      );
+      
+      if (titleComponent) {
+        const usernameMatch = titleComponent.content.match(/\*\*<:LU_Inventory:[^>]+>\s*(.+?)'s Inventory/);
+        if (usernameMatch) {
+          inventoryUsername = usernameMatch[1];
+          cards = parseInventoryComponent(message.components);
+        }
+      }
+    }
+  } else if (message.embeds.length > 0) {
+    // Fallback to embed
+    const embed = message.embeds[0];
+    if (!embed.title || !embed.title.includes('<:LU_Inventory:') || !embed.title.includes("'s Inventory")) return;
+    const usernameMatch = embed.title.match(/<:LU_Inventory:[^>]+>\s*(.+?)'s Inventory/);
+    if (!usernameMatch) return;
+    inventoryUsername = usernameMatch[1];
+    cards = parseInventoryEmbed(embed);
+  }
+  
+  if (!inventoryUsername || user.username !== inventoryUsername) return;
+  if (!cards.length) return;
+  
   try {
     await reaction.users.remove(user);
     await reaction.users.remove(reaction.client.user);
   } catch (error) {
     console.error('Failed to remove reactions:', error);
   }
-  const cards = parseInventoryEmbed(embed);
-  if (!cards.length) return;
+  
   generatorData.set(user.id, {
     cards,
     selectedNames: [],
@@ -477,9 +558,18 @@ function startInventoryWatcher(userId, inventoryMessage) {
     try {
       const channel = await inventoryMessage.client.channels.fetch(userData.inventoryChannelId);
       const message = await channel.messages.fetch(userData.inventoryMessageId);
-      if (!message.embeds.length) return;
-      const embed = message.embeds[0];
-      const newCards = parseInventoryEmbed(embed);
+      
+      let newCards = [];
+      
+      // Try components first
+      if (message.components && message.components.length > 0) {
+        newCards = parseInventoryComponent(message.components);
+      } else if (message.embeds.length > 0) {
+        // Fallback to embed
+        const embed = message.embeds[0];
+        newCards = parseInventoryEmbed(embed);
+      }
+      
       if (JSON.stringify(newCards) !== JSON.stringify(userData.cards)) {
         userData.cards = newCards;
         const mainMessage = generatorData.get(`main_message_${userId}`);

@@ -1,12 +1,23 @@
-const { parseRaidViewEmbed } = require('../utils/embedParser');
+const { parseRaidViewEmbed, parseRaidViewComponent } = require('../utils/embedParser');
 const Reminder = require('../database/Reminder');
 const { sendLog, sendError } = require('../utils/logger');
 
 async function processRaidMessage(message) {
-  if (!message.guild || !message.embeds.length) return;
+  if (!message.guild) return;
 
-  const embed = message.embeds[0];
-  const raidInfo = parseRaidViewEmbed(embed);
+  let raidInfo = null;
+
+  // Try parsing components first (new format)
+  if (message.components && message.components.length > 0) {
+    raidInfo = parseRaidViewComponent(message.components);
+  }
+
+  // Fallback to embed parsing (old format)
+  if (!raidInfo && message.embeds.length > 0) {
+    const embed = message.embeds[0];
+    raidInfo = parseRaidViewEmbed(embed);
+  }
+
   if (!raidInfo) return;
 
   // raidInfo is an array of { userId, fatigueMillis }
