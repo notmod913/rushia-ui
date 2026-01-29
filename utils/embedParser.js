@@ -86,11 +86,8 @@ function parseExpeditionComponent(components) {
 
   const container = components.find(c => c.type === 17);
   if (!container || !container.components) {
-    console.log('[EXPEDITION PARSE] No container found');
     return null;
   }
-
-  console.log('[EXPEDITION PARSE] Container has', container.components.length, 'components');
 
   // Check for "username's Expeditions" format
   const titleComponent = container.components.find(c => 
@@ -98,20 +95,14 @@ function parseExpeditionComponent(components) {
   );
 
   if (!titleComponent) {
-    console.log('[EXPEDITION PARSE] No title component found with "s Expeditions"');
-    console.log('[EXPEDITION PARSE] First few components:', container.components.slice(0, 3).map(c => ({ type: c.type, content: c.content?.substring(0, 50) })));
     return null;
   }
-
-  console.log('[EXPEDITION PARSE] Title component content:', titleComponent.content);
 
   const usernameMatch = titleComponent.content.match(/^(.+)'s Expeditions$/);
   if (!usernameMatch) {
-    console.log('[EXPEDITION PARSE] Username regex did not match');
     return null;
   }
   const username = usernameMatch[1];
-  console.log('[EXPEDITION PARSE] Extracted username:', username);
 
   const cards = [];
 
