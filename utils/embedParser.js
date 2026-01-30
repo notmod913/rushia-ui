@@ -125,7 +125,7 @@ function parseExpeditionComponent(components) {
       const cardId = idMatch[1];
       const hours = parseInt(timeMatch[1], 10);
       const minutes = parseInt(timeMatch[2], 10);
-      const remainingMillis = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000);
+      const remainingMillis = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000) + (30 * 1000); // Add 30s buffer
 
       if (remainingMillis > 0) cards.push({ cardId, cardName, remainingMillis });
     }
