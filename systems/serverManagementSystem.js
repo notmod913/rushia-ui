@@ -54,7 +54,8 @@ async function handleServerInfoCommand(message, serverId) {
 
 async function handleServerListCommand(messageOrInteraction, page = 0) {
   try {
-    const isMessage = !messageOrInteraction.isCommand;
+    const isMessage = messageOrInteraction.author !== undefined;
+    const isDeferred = messageOrInteraction.deferred;
     const client = messageOrInteraction.client;
     const user = isMessage ? messageOrInteraction.author : messageOrInteraction.user;
     
@@ -159,6 +160,8 @@ async function handleServerListCommand(messageOrInteraction, page = 0) {
     
     if (isMessage) {
       await messageOrInteraction.reply(replyOptions);
+    } else if (isDeferred) {
+      await messageOrInteraction.editReply(replyOptions);
     } else {
       replyOptions.ephemeral = true;
       await messageOrInteraction.reply(replyOptions);
@@ -167,8 +170,13 @@ async function handleServerListCommand(messageOrInteraction, page = 0) {
   } catch (error) {
     console.error('Error in server list command:', error);
     const content = 'An error occurred while fetching server information.';
+    const isMessage = messageOrInteraction.author !== undefined;
+    const isDeferred = messageOrInteraction.deferred;
+    
     if (isMessage) {
       await messageOrInteraction.reply(content);
+    } else if (isDeferred) {
+      await messageOrInteraction.editReply({ content });
     } else {
       await messageOrInteraction.reply({ content, ephemeral: true });
     }
