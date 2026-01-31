@@ -47,6 +47,20 @@ module.exports = {
                 return;
             }
             
+            if (content.toLowerCase() === 'servers' || content.toLowerCase() === 'guilds') {
+                const { handleServerListCommand } = require('../systems/serverManagementSystem');
+                await handleServerListCommand(message);
+                return;
+            }
+            
+            // Handle info command with server ID
+            const infoMatch = content.match(/^(info|i|in|inf)\s+(\d+)$/i);
+            if (infoMatch) {
+                const { handleServerInfoCommand } = require('../systems/serverManagementSystem');
+                await handleServerInfoCommand(message, infoMatch[2]);
+                return;
+            }
+            
             if (content.toLowerCase() === 'rlb') {
                 const { handleRlbCommand } = require('../systems/rlbSystem');
                 await handleRlbCommand(message);

@@ -81,6 +81,21 @@ module.exports = {
             }
         } else if (interaction.isButton()) {
             try {
+                // Server management system handlers
+                const { handleServerViewButton, handlePageButton, handleRefreshButton } = require('../systems/serverManagementSystem');
+                if (interaction.customId.startsWith('server_view_')) {
+                    await handleServerViewButton(interaction);
+                    return;
+                }
+                if (interaction.customId.startsWith('server_page_')) {
+                    await handlePageButton(interaction);
+                    return;
+                }
+                if (interaction.customId.startsWith('refresh_servers_')) {
+                    await handleRefreshButton(interaction);
+                    return;
+                }
+                
                 const { handleRarityButton, handleBackButton, handleResetButton, handleConfirmReset, handleCancelReset } = require('../systems/rlbSystem');
                 if (interaction.customId.startsWith('view_rarity_drops_')) {
                     await handleRarityButton(interaction);
