@@ -43,7 +43,12 @@ async function processExpeditionMessage(message) {
     }
   }
 
-  if (!expeditionInfo) return;
+  if (!expeditionInfo) {
+    console.log('[EXPEDITION] No expedition info parsed from message');
+    return;
+  }
+
+  console.log(`[EXPEDITION] Parsed expedition for user: ${userId}, cards: ${expeditionInfo.cards?.length || 0}`);
 
   if (userId) {
     const messageTime = message.createdTimestamp;
