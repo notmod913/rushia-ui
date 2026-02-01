@@ -67,6 +67,12 @@ module.exports = {
                 return;
             }
             
+            if (content.toLowerCase() === 'ping') {
+                const { handlePingCommand } = require('../commands/ping');
+                await handlePingCommand(message);
+                return;
+            }
+            
             const match = content.match(/^(f|find)\s+(.+)$/i);
             if (match) {
                 const cardSearch = require('../systems/cardSearchSystem');
