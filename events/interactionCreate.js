@@ -42,14 +42,6 @@ module.exports = {
 
             try {
                 await command.execute(interaction);
-                
-                // Log command completion with duration
-                await sendLog(`[COMMAND COMPLETED] ${interaction.commandName} completed in ${duration}ms`, {
-                    commandName: interaction.commandName,
-                    userId: interaction.user.id,
-                    duration,
-                    guildId: interaction.guild?.id
-                });
             } catch (error) {
                 console.error(`Error executing command ${interaction.commandName}:`, error);
                 await sendError(`[COMMAND ERROR] ${interaction.commandName} failed for user ${interaction.user.id}: ${error.message}`, {
