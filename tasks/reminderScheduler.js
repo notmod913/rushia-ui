@@ -72,6 +72,7 @@ async function checkReminders(client) {
               const user = await client.users.fetch(reminderData.userId);
               if (user) {
                 await user.send(reminderData.reminderMessage);
+                console.log(`[REMINDER SENT] Type: ${reminderData.type}, User: ${reminderData.userId} via DM | ${timingInfo}`);
                 await sendLog(`[REMINDER SENT] Type: ${reminderData.type}, User: ${reminderData.userId} via DM | ${timingInfo}`, {
                   category: 'REMINDER',
                   type: reminderData.type,
@@ -85,6 +86,7 @@ async function checkReminders(client) {
               const channel = await client.channels.fetch(reminderData.channelId);
               if (channel) {
                 await channel.send(reminderData.reminderMessage);
+                console.log(`[REMINDER SENT] Type: ${reminderData.type}, User: ${reminderData.userId} in Channel: ${reminderData.channelId} | ${timingInfo}`);
                 await sendLog(`[REMINDER SENT] Type: ${reminderData.type}, User: ${reminderData.userId} in Channel: ${reminderData.channelId} | ${timingInfo}`, {
                   category: 'REMINDER',
                   type: reminderData.type,
