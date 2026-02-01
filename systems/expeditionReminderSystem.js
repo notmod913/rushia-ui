@@ -47,13 +47,12 @@ async function processExpeditionMessage(message) {
 
   if (userId) {
     const messageTime = message.createdTimestamp;
-    const processingDelay = Date.now() - messageTime;
     
     for (const card of expeditionInfo.cards) {
       const existingReminder = await Reminder.findOne({ userId, cardId: card.cardId });
       if (!existingReminder) {
         try {
-          const remindAt = new Date(messageTime + card.remainingMillis + processingDelay);
+          const remindAt = new Date(messageTime + card.remainingMillis);
           await Reminder.create({
             userId,
             cardId: card.cardId,
