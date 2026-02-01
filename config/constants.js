@@ -15,7 +15,7 @@ module.exports = {
   },
   
   SCHEDULER: {
-    CHECK_INTERVAL: 5000, // 5 seconds
+    CHECK_INTERVAL: 1000, // 1 second
     BATCH_SIZE: 50
   },
   
