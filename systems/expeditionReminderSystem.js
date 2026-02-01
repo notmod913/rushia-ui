@@ -43,37 +43,19 @@ async function processExpeditionMessage(message) {
     }
   }
 
-  if (!expeditionInfo) {
-    console.log('[EXPEDITION] No expedition info parsed from message');
-    return;
-  }
-
-  console.log(`[EXPEDITION] Parsed expedition for user: ${userId}, username: ${expeditionInfo.username}, cards: ${expeditionInfo.cards?.length || 0}`);
+  if (!expeditionInfo) return;
 
   if (!userId && expeditionInfo?.username) {
-    console.log(`[EXPEDITION] Attempting to fetch member by username: ${expeditionInfo.username}`);
     try {
       const members = await message.guild.members.fetch({ query: expeditionInfo.username, limit: 1 });
       const member = members.first();
-      if (member) {
-        userId = member.id;
-        console.log(`[EXPEDITION] Found member: ${member.user.tag} (${userId})`);
-      } else {
-        console.log(`[EXPEDITION] No member found for username: ${expeditionInfo.username}`);
-      }
+      if (member) userId = member.id;
     } catch (err) {
-      console.log(`[EXPEDITION] Failed to fetch member: ${err.message}`);
+      // Silent fail
     }
   }
 
-  if (!userId) {
-    console.log('[EXPEDITION] No userId found, skipping reminder creation');
-    return;
-  }
-  if (!userId) {
-    console.log('[EXPEDITION] No userId found, skipping reminder creation');
-    return;
-  }
+  if (!userId) return;
 
   const messageTime = message.createdTimestamp;
   
@@ -90,7 +72,6 @@ async function processExpeditionMessage(message) {
           type: 'expedition',
           reminderMessage: `<@${userId}>, your expedition cards are ready to be claimed!\n-# Use </expeditions:1426499105936379922> to resend your expedition cards. `, 
         });
-        console.log(`[EXPEDITION] Created reminder for user ${userId}, card ${card.cardId}, fires at ${remindAt}`);
       } catch (error) {
         if (error.code !== 11000) {
           await sendError(`[ERROR] Failed to create reminder for expedition: ${error.message}`);

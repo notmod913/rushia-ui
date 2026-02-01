@@ -41,9 +41,7 @@ module.exports = {
             });
 
             try {
-                const startTime = Date.now();
                 await command.execute(interaction);
-                const duration = Date.now() - startTime;
                 
                 // Log command completion with duration
                 await sendLog(`[COMMAND COMPLETED] ${interaction.commandName} completed in ${duration}ms`, {
@@ -167,7 +165,6 @@ module.exports = {
                     });
 
                     await interaction.editReply({ content: confirmationMessage });
-                    await sendLog(`[STAMINA REMINDER SET] User: ${user.id}, Percentage: ${percentage}%, Channel: ${channel.id}, Message ID: ${message.id}, Message Link: ${message.url}`);
 
                     const originalMessage = interaction.message;
                     const disabledRow = new ActionRowBuilder()

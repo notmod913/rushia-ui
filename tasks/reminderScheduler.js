@@ -18,7 +18,8 @@ async function checkReminders(client) {
           guildId: reminder.guildId,
           channelId: reminder.channelId,
           reminderMessage: reminder.reminderMessage,
-          type: reminder.type, // Add type to the grouped data
+          type: reminder.type,
+          remindAt: reminder.remindAt,
           reminderIds: [],
         };
       }
@@ -35,6 +36,10 @@ async function checkReminders(client) {
 
       const sendPromise = (async () => {
         try {
+          const delayMs = now - reminderData.remindAt;
+          const isEarly = delayMs < 0;
+          const timingInfo = isEarly ? `EARLY by ${Math.abs(delayMs)}ms` : `DELAYED by ${delayMs}ms`;
+          
           let userSettings = getUserSettings(reminderData.userId);
           if (!userSettings) {
             const { updateUserSettings } = require('../utils/userSettingsManager');
@@ -67,23 +72,27 @@ async function checkReminders(client) {
               const user = await client.users.fetch(reminderData.userId);
               if (user) {
                 await user.send(reminderData.reminderMessage);
-                await sendLog(`[REMINDER SENT] Type: ${reminderData.type}, User: ${reminderData.userId} via DM`, {
+                await sendLog(`[REMINDER SENT] Type: ${reminderData.type}, User: ${reminderData.userId} via DM | ${timingInfo}`, {
                   category: 'REMINDER',
                   type: reminderData.type,
                   userId: reminderData.userId,
-                  method: 'DM'
+                  method: 'DM',
+                  delayMs,
+                  isEarly
                 });
               }
             } else {
               const channel = await client.channels.fetch(reminderData.channelId);
               if (channel) {
                 await channel.send(reminderData.reminderMessage);
-                await sendLog(`[REMINDER SENT] Type: ${reminderData.type}, User: ${reminderData.userId} in Channel: ${reminderData.channelId}`, {
+                await sendLog(`[REMINDER SENT] Type: ${reminderData.type}, User: ${reminderData.userId} in Channel: ${reminderData.channelId} | ${timingInfo}`, {
                   category: 'REMINDER',
                   type: reminderData.type,
                   userId: reminderData.userId,
                   channelId: reminderData.channelId,
-                  method: 'CHANNEL'
+                  method: 'CHANNEL',
+                  delayMs,
+                  isEarly
                 });
               }
             }
