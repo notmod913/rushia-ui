@@ -17,7 +17,10 @@ module.exports = {
         const client = message.client;
 
         // Handle bot mentions for card search and logs
-        if (content.toLowerCase() === 'logs') {
+        if (!message.author.bot && message.mentions.has(client.user)) {
+            const content = message.content.replace(`<@${client.user.id}>`, '').trim();
+            
+            if (content.toLowerCase() === 'logs') {
                 const { handleLogsCommand } = require('../commands/logs');
                 await handleLogsCommand(message);
                 return;
