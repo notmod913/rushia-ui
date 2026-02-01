@@ -91,9 +91,9 @@ async function sendReminderPage(message, sessionId, interaction = null) {
     const settingsMap = {};
     userSettings.forEach(s => settingsMap[s.userId] = s);
 
-    const totalPages = Math.ceil(users.length / 5);
-    const start = session.page * 5;
-    const pageUsers = users.slice(start, start + 5);
+    const totalPages = Math.ceil(users.length / 6);
+    const start = session.page * 6;
+    const pageUsers = users.slice(start, start + 6);
 
     const typeEmojis = {
         expedition: '🗺️',
