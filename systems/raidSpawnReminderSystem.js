@@ -30,6 +30,7 @@ async function detectAndSetRaidSpawnReminder(message) {
       type: 'raidSpawn',
       reminderMessage: `<@${userId}>, You can now use </raid spawn:1404667045332910220> to spawn a new raid boss!`
     });
+    console.log(`[RAID SPAWN REMINDER CREATED] User: ${userId}, Fires at: ${remindAt.toISOString()}`);
     
     await sendLog(`[RAID SPAWN REMINDER SET] User: ${userId}, Channel: ${message.channel.id}, Message: ${message.url}`, {
       category: 'RAID_SPAWN',

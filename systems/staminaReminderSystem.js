@@ -40,6 +40,7 @@ async function processStaminaMessage(message) {
       await message.channel.send({
         content: `<@${userId}>, I'll remind you when your stamina is 10/10.`,
       });
+      console.log(`[STAMINA REMINDER CREATED] User: ${userId}, Fires at: ${remindAt.toISOString()}`);
     } catch (error) {
       console.error(`[ERROR] Failed to create stamina reminder: ${error.message}`, error);
       await sendError(`[ERROR] Failed to create stamina reminder: ${error.message}`);

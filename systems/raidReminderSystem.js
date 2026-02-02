@@ -20,6 +20,8 @@ async function processRaidMessage(message) {
 
   if (!raidInfo) return;
 
+  console.log(`[RAID] Processing ${raidInfo.length} fatigued users`);
+
   // raidInfo is an array of { userId, fatigueMillis }
   for (const fatiguedUser of raidInfo) {
     const { userId, fatigueMillis } = fatiguedUser;
@@ -47,6 +49,7 @@ async function processRaidMessage(message) {
           type: 'raid',
           reminderMessage: `<@${userId}>, your raid fatigue has worn off! use </raid attack:1404667045332910220> to attack the boss again.`,
         });
+        console.log(`[RAID REMINDER CREATED] User: ${userId}, Fires at: ${remindAt.toISOString()}`);
       } catch (error) {
         if (error.code === 11000) {
           // Suppress duplicate key errors
