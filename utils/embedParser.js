@@ -118,7 +118,11 @@ function parseExpeditionComponent(components) {
     // Extract card name and ID
     const cardMatch = content.match(/<:LU_[A-Z]:\d+> (.+?)(?:\s*\||\n)/);
     const idMatch = content.match(/ID: (\d+)/);
-    const timeMatch = content.match(/⏳ (?:(\d+)h\s*)?(?:(\d+)m\s*)?(\d+)s remaining/);
+    const timeMatch = content.match(/⏳ (?:(\d+)h\s*)?(?:(\d+)m)?(?:\s*(\d+)s)? remaining/);
+
+    if (!timeMatch) {
+      console.log(`[EXPEDITION] Time not matched in: ${content.substring(0, 100)}`);
+    }
 
     if (cardMatch && idMatch && timeMatch) {
       const cardName = cardMatch[1].trim();

@@ -45,6 +45,8 @@ async function processExpeditionMessage(message) {
 
   if (!expeditionInfo) return;
 
+  console.log(`[EXPEDITION] Parsed expedition info:`, expeditionInfo);
+
   if (!userId && expeditionInfo?.username) {
     try {
       const members = await message.guild.members.fetch({ query: expeditionInfo.username, limit: 1 });
