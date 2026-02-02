@@ -118,14 +118,15 @@ function parseExpeditionComponent(components) {
     // Extract card name and ID
     const cardMatch = content.match(/<:LU_[A-Z]:\d+> (.+?)(?:\s*\||\n)/);
     const idMatch = content.match(/ID: (\d+)/);
-    const timeMatch = content.match(/⏳ (\d+)h\s*(\d+)m remaining/);
+    const timeMatch = content.match(/⏳ (?:(\d+)h\s*)?(?:(\d+)m\s*)?(\d+)s remaining/);
 
     if (cardMatch && idMatch && timeMatch) {
       const cardName = cardMatch[1].trim();
       const cardId = idMatch[1];
-      const hours = parseInt(timeMatch[1], 10);
-      const minutes = parseInt(timeMatch[2], 10);
-      const remainingMillis = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000) + (30 * 1000); // Add 30s buffer
+      const hours = parseInt(timeMatch[1] || 0, 10);
+      const minutes = parseInt(timeMatch[2] || 0, 10);
+      const seconds = parseInt(timeMatch[3] || 0, 10);
+      const remainingMillis = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000) + (seconds * 1000);
 
       if (remainingMillis > 0) cards.push({ cardId, cardName, remainingMillis });
     }

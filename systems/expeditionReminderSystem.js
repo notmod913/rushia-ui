@@ -68,6 +68,10 @@ async function processExpeditionMessage(message) {
     if (!existingReminder) {
       try {
         const remindAt = new Date(messageTime + card.remainingMillis);
+        const timeRemaining = card.remainingMillis;
+        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
         await Reminder.create({
           userId,
           cardId: card.cardId,
@@ -76,8 +80,7 @@ async function processExpeditionMessage(message) {
           type: 'expedition',
           reminderMessage: `<@${userId}>, your expedition cards are ready to be claimed!\n-# Use </expeditions:1426499105936379922> to resend your expedition cards. `, 
         });
-        console.log(`[EXPEDITION] Created reminder for user ${userId}, card ${card.cardId}, fires at ${remindAt.toISOString()}`);
-      } catch (error) {
+        console.log(`[EXPEDITION REMINDER CREATED] User: ${userId}, Card: ${card.cardId}, In: ${hours}h ${minutes}m ${seconds}s`);      } catch (error) {
         if (error.code !== 11000) {
           await sendError(`[ERROR] Failed to create reminder for expedition: ${error.message}`);
         }
