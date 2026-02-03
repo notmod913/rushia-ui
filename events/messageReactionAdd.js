@@ -38,11 +38,38 @@ module.exports = {
                 }
             }
             
-            if (!embedUsername || embedUsername !== user.username) return;
+            if (!embedUsername) return;
+            
+            // Try to find the user by username in the guild
+            let targetUserId = null;
+            if (reaction.message.guild) {
+                try {
+                    const members = await reaction.message.guild.members.fetch({ query: embedUsername, limit: 1 });
+                    const member = members.first();
+                    if (member && member.id === user.id) {
+                        targetUserId = user.id;
+                    }
+                } catch (err) {
+                    // Silent fail
+                }
+            }
+            
+            if (!targetUserId) return;
             if (Object.keys(cards).length === 0) return;
 
             const message = buildRarityMessage(cards);
             const cardListMessage = await reaction.message.reply({ content: message });
+            
+            // Remove both reactions
+            try {
+                await reaction.remove();
+                const botReaction = reaction.message.reactions.cache.find(r => r.emoji.name === '✏️');
+                if (botReaction) {
+                    await botReaction.remove();
+                }
+            } catch (error) {
+                console.error('Error removing reactions:', error);
+            }
             
             startPaginationWatcher(user.id, reaction.message, cardListMessage);
         } catch (error) {
