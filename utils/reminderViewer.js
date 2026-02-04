@@ -1,7 +1,12 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const Reminder = require('../database/Reminder');
+const { BOT_OWNER_ID } = require('../config/constants');
 
 async function handleReminderView(message) {
+    if (message.author.id !== BOT_OWNER_ID) {
+        return message.reply('❌ Only the bot owner can use this command.');
+    }
+
     const reminders = await Reminder.find({
         sent: { $ne: true }
     }).sort({ remindAt: 1 });
