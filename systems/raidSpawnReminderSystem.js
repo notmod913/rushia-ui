@@ -1,7 +1,7 @@
 const Reminder = require('../database/Reminder');
 const { getUserSettings } = require('../utils/userSettingsManager');
 const { sendLog, sendError } = require('../utils/logger');
-const { checkDuplicate, createReminderSafe } = require('../utils/reminderDuplicateChecker');
+const { checkExistingReminder, createReminderSafe } = require('../utils/reminderDuplicateChecker');
 
 const LUVI_ID = '1269481871021047891';
 const timeoutMap = new Map();
@@ -23,7 +23,7 @@ async function detectAndSetRaidSpawnReminder(message) {
   const thirtyMinutes = 30 * 60 * 1000;
   const remindAt = new Date(Date.now() + thirtyMinutes);
 
-  const existingReminder = await checkDuplicate(userId, 'raidSpawn');
+  const existingReminder = await checkExistingReminder(userId, 'raidSpawn');
   if (existingReminder) {
     console.log(`[RAID SPAWN] Duplicate prevented for user ${userId}`);
     return;

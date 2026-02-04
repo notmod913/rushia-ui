@@ -1,7 +1,7 @@
 const { parseExpeditionEmbed, parseExpeditionComponent } = require('../utils/embedParser');
 const Reminder = require('../database/Reminder');
 const { sendLog, sendError } = require('../utils/logger');
-const { checkDuplicate, createReminderSafe } = require('../utils/reminderDuplicateChecker');
+const { checkExistingReminder, createReminderSafe } = require('../utils/reminderDuplicateChecker');
 
 async function processExpeditionMessage(message) {
   if (!message.guild) return;
@@ -66,7 +66,7 @@ async function processExpeditionMessage(message) {
   for (const card of expeditionInfo.cards) {
     const remindAt = new Date(Date.now() + card.remainingMillis);
     
-    const existingReminder = await checkDuplicate(userId, 'expedition', card.cardId);
+    const existingReminder = await checkExistingReminder(userId, 'expedition', card.cardId);
     if (existingReminder) continue;
 
     const result = await createReminderSafe({

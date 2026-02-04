@@ -1,7 +1,7 @@
 const { parseRaidViewEmbed, parseRaidViewComponent } = require('../utils/embedParser');
 const Reminder = require('../database/Reminder');
 const { sendLog, sendError } = require('../utils/logger');
-const { checkDuplicate, createReminderSafe } = require('../utils/reminderDuplicateChecker');
+const { checkExistingReminder, createReminderSafe } = require('../utils/reminderDuplicateChecker');
 
 async function processRaidMessage(message) {
   if (!message.guild) return;
@@ -27,7 +27,7 @@ async function processRaidMessage(message) {
     const { userId, fatigueMillis } = fatiguedUser;
     const remindAt = new Date(Date.now() + fatigueMillis);
 
-    const existingReminder = await checkDuplicate(userId, 'raid');
+    const existingReminder = await checkExistingReminder(userId, 'raid');
     if (existingReminder) continue;
 
     const result = await createReminderSafe({
