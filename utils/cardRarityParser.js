@@ -88,10 +88,23 @@ function extractCardsFromEmbed(embed) {
 function buildRarityMessage(cards) {
     const rarities = RARITY_ORDER.filter(r => cards[r]?.length > 0);
     if (rarities.length === 0) return 'No cards found.';
+    
+    const gradeOrder = ['S+', 'S', 'A', 'B', 'C', 'D', ''];
+    
     return rarities.map(rarity => {
-        const cardList = cards[rarity].map(card => card.grade ? `${card.name}[${card.grade}]` : card.name).join(', ');
-        return `**${rarity}**\n${cardList}`;
-    }).join('\n');
+        const cardsByGrade = {};
+        cards[rarity].forEach(card => {
+            const grade = card.grade || '';
+            if (!cardsByGrade[grade]) cardsByGrade[grade] = [];
+            cardsByGrade[grade].push(card.name);
+        });
+        
+        const gradeLines = gradeOrder
+            .filter(grade => cardsByGrade[grade])
+            .map(grade => `${grade || 'No Grade'} : ${cardsByGrade[grade].join(', ')}`);
+        
+        return `**${rarity}**\n${gradeLines.join('\n')}`;
+    }).join('\n\n');
 }
 
 module.exports = { extractCardsFromEmbed, extractCardsFromComponent, buildRarityMessage };

@@ -11,7 +11,6 @@ async function reactWithRetry(message, emoji, maxRetries) {
             await message.react(emoji);
             return;
         } catch (error) {
-            console.error(`Attempt ${attempt}/${maxRetries} failed to react:`, error.message);
             if (attempt < maxRetries) {
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
