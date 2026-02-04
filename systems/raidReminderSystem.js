@@ -1,6 +1,7 @@
 const { parseRaidViewEmbed, parseRaidViewComponent } = require('../utils/embedParser');
 const Reminder = require('../database/Reminder');
 const { sendLog, sendError } = require('../utils/logger');
+const { checkDuplicate, createReminderSafe } = require('../utils/reminderDuplicateChecker');
 
 async function processRaidMessage(message) {
   if (!message.guild) return;
@@ -22,42 +23,27 @@ async function processRaidMessage(message) {
 
   console.log(`[RAID] Processing ${raidInfo.length} fatigued users`);
 
-  // raidInfo is an array of { userId, fatigueMillis }
   for (const fatiguedUser of raidInfo) {
     const { userId, fatigueMillis } = fatiguedUser;
-
-    // To prevent duplicate reminders from being created for the same fatigue event
-    // (since raid embeds can be updated frequently), we check for an existing reminder
-    // within a small time window around when this one would be set.
-    const fiveSeconds = 5000;
     const remindAt = new Date(Date.now() + fatigueMillis);
-    const existingReminder = await Reminder.findOne({
+
+    const existingReminder = await checkDuplicate(userId, 'raid');
+    if (existingReminder) continue;
+
+    const result = await createReminderSafe({
       userId,
+      channelId: message.channel.id,
+      remindAt,
       type: 'raid',
-      remindAt: {
-        $gte: new Date(remindAt.getTime() - fiveSeconds),
-        $lte: new Date(remindAt.getTime() + fiveSeconds),
-      },
+      reminderMessage: `<@${userId}>, your raid fatigue has worn off! use </raid attack:1404667045332910220> to attack the boss again.`
     });
 
-    if (!existingReminder) {
-      try {
-        await Reminder.create({
-          userId,
-          channelId: message.channel.id,
-          remindAt,
-          type: 'raid',
-          reminderMessage: `<@${userId}>, your raid fatigue has worn off! use </raid attack:1404667045332910220> to attack the boss again.`,
-        });
-        console.log(`[RAID REMINDER CREATED] User: ${userId}, Fires at: ${remindAt.toISOString()}`);
-      } catch (error) {
-        if (error.code === 11000) {
-          // Suppress duplicate key errors
-        } else {
-          console.error(`[ERROR] Failed to create reminder for raid fatigue: ${error.message}`, error);
-          await sendError(`[ERROR] Failed to create reminder for raid fatigue: ${error.message}`);
-        }
-      }
+    if (result.success) {
+      console.log(`[RAID REMINDER CREATED] User: ${userId}, Fires at: ${remindAt.toISOString()}`);
+    } else if (result.reason === 'duplicate') {
+      console.log(`[RAID] Duplicate prevented for user ${userId}`);
+    } else {
+      await sendError(`[ERROR] Failed to create raid reminder: ${result.error.message}`);
     }
   }
 }

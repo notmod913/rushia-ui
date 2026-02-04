@@ -16,7 +16,8 @@ module.exports = {
             .addChoices(
               { name: 'Expedition', value: 'expedition' },
               { name: 'Stamina', value: 'stamina' },
-              { name: 'Raid Spawn', value: 'raidSpawn' }
+              { name: 'Raid Spawn', value: 'raidSpawn' },
+              { name: 'Drop', value: 'drop' }
             )))
     .addSubcommand(subcommand =>
       subcommand
@@ -29,7 +30,8 @@ module.exports = {
             .addChoices(
               { name: 'Expedition', value: 'expedition' },
               { name: 'Stamina', value: 'stamina' },
-              { name: 'Raid Spawn', value: 'raidSpawn' }
+              { name: 'Raid Spawn', value: 'raidSpawn' },
+              { name: 'Drop', value: 'drop' }
             ))),
   async execute(interaction) {
     const subcommand = interaction.options.getSubcommand();

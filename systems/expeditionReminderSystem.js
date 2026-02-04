@@ -1,6 +1,7 @@
 const { parseExpeditionEmbed, parseExpeditionComponent } = require('../utils/embedParser');
 const Reminder = require('../database/Reminder');
 const { sendLog, sendError } = require('../utils/logger');
+const { checkDuplicate, createReminderSafe } = require('../utils/reminderDuplicateChecker');
 
 async function processExpeditionMessage(message) {
   if (!message.guild) return;
@@ -62,40 +63,31 @@ async function processExpeditionMessage(message) {
     return;
   }
 
-  console.log(`[EXPEDITION] Processing ${expeditionInfo.cards?.length || 0} cards for user ${userId}`);
-  const messageTime = message.createdTimestamp;
-  
   for (const card of expeditionInfo.cards) {
     const remindAt = new Date(messageTime + card.remainingMillis);
-    const fiveSeconds = 5000;
-    const existingReminder = await Reminder.findOne({
+    
+    const existingReminder = await checkDuplicate(userId, 'expedition', card.cardId);
+    if (existingReminder) continue;
+
+    const result = await createReminderSafe({
       userId,
       cardId: card.cardId,
+      channelId: message.channel.id,
+      remindAt,
       type: 'expedition',
-      remindAt: {
-        $gte: new Date(remindAt.getTime() - fiveSeconds),
-        $lte: new Date(remindAt.getTime() + fiveSeconds),
-      },
+      reminderMessage: `<@${userId}>, your expedition cards are ready to be claimed!\n-# Use </expeditions:1426499105936379922> to resend your expedition cards.`
     });
-    if (!existingReminder) {
-      try {
-        const timeRemaining = card.remainingMillis;
-        const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-        const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-        await Reminder.create({
-          userId,
-          cardId: card.cardId,
-          channelId: message.channel.id,
-          remindAt,
-          type: 'expedition',
-          reminderMessage: `<@${userId}>, your expedition cards are ready to be claimed!\n-# Use </expeditions:1426499105936379922> to resend your expedition cards. `, 
-        });
-        console.log(`[EXPEDITION REMINDER CREATED] User: ${userId}, Card: ${card.cardId}, In: ${hours}h ${minutes}m ${seconds}s`);      } catch (error) {
-        if (error.code !== 11000) {
-          await sendError(`[ERROR] Failed to create reminder for expedition: ${error.message}`);
-        }
-      }
+
+    if (result.success) {
+      const timeRemaining = card.remainingMillis;
+      const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
+      const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
+      console.log(`[EXPEDITION REMINDER CREATED] User: ${userId}, Card: ${card.cardId}, In: ${hours}h ${minutes}m ${seconds}s`);
+    } else if (result.reason === 'duplicate') {
+      console.log(`[EXPEDITION] Duplicate prevented for user ${userId}, card ${card.cardId}`);
+    } else {
+      await sendError(`[ERROR] Failed to create expedition reminder: ${result.error.message}`);
     }
   }
 }

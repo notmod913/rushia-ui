@@ -19,3 +19,6 @@ coverage/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Scripts folder
+scripts/

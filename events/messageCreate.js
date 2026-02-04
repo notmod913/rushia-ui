@@ -9,7 +9,6 @@ const { processRarityDrop } = require('../systems/rarityDropSystem');
 const { processDropCount } = require('../systems/dropCountSystem');
 const { processInventoryMessage: processGeneratorMessage } = require('../systems/messageGeneratorSystem');
 const { LUVI_BOT_ID } = require('../config/constants');
-const CacheManager = require('../optimization/cache');
 
 module.exports = {
     name: Events.MessageCreate,
@@ -101,10 +100,6 @@ module.exports = {
 
         // Only process Luvi bot messages for game notifications
         if (message.author.id !== LUVI_BOT_ID) return;
-        
-        const messageKey = `msg_${message.id}_${message.createdTimestamp}`;
-        if (CacheManager.getMessage(messageKey)) return;
-        CacheManager.setMessage(messageKey, true);
 
         await processStaminaMessage(message);
         await processExpeditionMessage(message);

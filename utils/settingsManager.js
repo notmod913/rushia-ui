@@ -2,32 +2,35 @@ const BotSettings = require('../database/BotSettings');
 const { sendLog, sendError } = require('./logger');
 const CacheManager = require('../optimization/cache');
 
-const settingsCache = new Map();
-
 async function initializeSettings() {
   try {
     const allSettings = await BotSettings.find();
     allSettings.forEach(settings => {
-      settingsCache.set(settings.guildId, settings);
+      CacheManager.setGuildSettings(settings.guildId, settings);
     });
-    await sendLog(`[INFO] Successfully cached settings for ${settingsCache.size} guilds.`);
+    await sendLog(`[INFO] Cached guild settings for ${allSettings.length} guilds.`);
   } catch (error) {
-    console.error(`[ERROR] Failed to initialize settings cache: ${error.message}`, error);
-    await sendError(`[ERROR] Failed to initialize settings cache: ${error.message}`);
+    console.error(`[ERROR] Failed to initialize settings: ${error.message}`);
+    await sendError(`[ERROR] Failed to initialize settings: ${error.message}`);
   }
 }
 
-function getSettings(guildId) {
-  // Try cache first
-  const cached = CacheManager.getGuild(`settings_${guildId}`);
-  if (cached) return cached;
-  
-  // Fallback to memory cache
-  const settings = settingsCache.get(guildId);
-  if (settings) {
-    CacheManager.setGuild(`settings_${guildId}`, settings);
+async function getSettings(guildId) {
+  // Check cache first
+  let settings = CacheManager.getGuildSettings(guildId);
+  if (settings) return settings;
+
+  // Query database if not in cache
+  try {
+    settings = await BotSettings.findOne({ guildId });
+    if (settings) {
+      CacheManager.setGuildSettings(guildId, settings);
+    }
+    return settings;
+  } catch (error) {
+    console.error(`[ERROR] Failed to get settings for guild ${guildId}: ${error.message}`);
+    return null;
   }
-  return settings;
 }
 
 async function updateSettings(guildId, newSettings) {
@@ -54,24 +57,18 @@ async function updateSettings(guildId, newSettings) {
       { new: true, upsert: true }
     );
 
-    settingsCache.set(guildId, updatedSettings);
-    CacheManager.setGuild(`settings_${guildId}`, updatedSettings);
+    CacheManager.setGuildSettings(guildId, updatedSettings);
     await sendLog(`[INFO] Settings updated for guild ${guildId}`);
     return updatedSettings;
   } catch (error) {
-    console.error(`[ERROR] Failed to update settings for guild ${guildId}: ${error.message}`, error);
+    console.error(`[ERROR] Failed to update settings for guild ${guildId}: ${error.message}`);
     await sendError(`[ERROR] Failed to update settings for guild ${guildId}: ${error.message}`);
     return null;
   }
-}
-
-function getCachedSettings() {
-    return settingsCache;
 }
 
 module.exports = {
   initializeSettings,
   getSettings,
   updateSettings,
-  getCachedSettings,
 };

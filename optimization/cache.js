@@ -1,39 +1,28 @@
-const NodeCache = require('node-cache');
-
-// Create cache instances with TTL
-const messageCache = new NodeCache({ stdTTL: 300 }); // 5 minutes
-const userCache = new NodeCache({ stdTTL: 3600 }); // 1 hour
-const guildCache = new NodeCache({ stdTTL: 1800 }); // 30 minutes
+const userSettingsCache = new Map();
+const guildSettingsCache = new Map();
 
 class CacheManager {
-  static setMessage(key, value) {
-    messageCache.set(key, value);
+  // User Settings
+  static setUserSettings(userId, data) {
+    userSettingsCache.set(userId, data);
   }
 
-  static getMessage(key) {
-    return messageCache.get(key);
+  static getUserSettings(userId) {
+    return userSettingsCache.get(userId);
   }
 
-  static setUser(userId, data) {
-    userCache.set(userId, data);
+  // Guild Settings
+  static setGuildSettings(guildId, data) {
+    guildSettingsCache.set(guildId, data);
   }
 
-  static getUser(userId) {
-    return userCache.get(userId);
-  }
-
-  static setGuild(guildId, data) {
-    guildCache.set(guildId, data);
-  }
-
-  static getGuild(guildId) {
-    return guildCache.get(guildId);
+  static getGuildSettings(guildId) {
+    return guildSettingsCache.get(guildId);
   }
 
   static clearAll() {
-    messageCache.flushAll();
-    userCache.flushAll();
-    guildCache.flushAll();
+    userSettingsCache.clear();
+    guildSettingsCache.clear();
   }
 }
 
