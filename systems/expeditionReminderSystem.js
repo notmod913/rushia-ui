@@ -64,7 +64,7 @@ async function processExpeditionMessage(message) {
   }
 
   for (const card of expeditionInfo.cards) {
-    const remindAt = new Date(messageTime + card.remainingMillis);
+    const remindAt = new Date(Date.now() + card.remainingMillis);
     
     const existingReminder = await checkDuplicate(userId, 'expedition', card.cardId);
     if (existingReminder) continue;
