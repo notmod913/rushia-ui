@@ -130,7 +130,13 @@ function parseExpeditionComponent(components) {
       const hours = parseInt(timeMatch[1] || 0, 10);
       const minutes = parseInt(timeMatch[2] || 0, 10);
       const seconds = parseInt(timeMatch[3] || 0, 10);
-      const remainingMillis = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000) + (seconds * 1000);
+      
+      let remainingMillis = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000) + (seconds * 1000);
+      
+      // If no seconds specified but has hours/minutes, add 59 seconds
+      if (!timeMatch[3] && (timeMatch[1] || timeMatch[2])) {
+        remainingMillis += 59 * 1000;
+      }
 
       if (remainingMillis > 0) cards.push({ cardId, cardName, remainingMillis });
     }
