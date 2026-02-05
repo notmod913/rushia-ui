@@ -21,8 +21,15 @@ async function processBossMessage(message) {
 
   if (!bossInfo) return;
 
-  const settings = getSettings(message.guild.id);
-  if (!settings) return;
+  console.log(`[BOSS] Detected boss: ${bossInfo.bossName} (${bossInfo.tier})`);
+
+  const settings = await getSettings(message.guild.id);
+  if (!settings) {
+    console.log(`[BOSS] No settings found for guild ${message.guild.id}`);
+    return;
+  }
+
+  console.log(`[BOSS] Settings:`, { multiRoleEnabled: settings.multiRoleEnabled, bossRoleId: settings.bossRoleId, tier1: settings.tier1RoleId, tier2: settings.tier2RoleId, tier3: settings.tier3RoleId });
 
   let roleId = null;
   
