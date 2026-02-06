@@ -8,6 +8,10 @@ async function checkReminders(client) {
     const dueReminders = await Reminder.getDueReminders(2000, SCHEDULER.BATCH_SIZE);
     if (dueReminders.length === 0) return;
 
+    // Mark as sent immediately to prevent race conditions
+    const reminderIds = dueReminders.map(r => r._id);
+    await Reminder.markAsSent(reminderIds);
+
     const remindersToProcess = dueReminders.reduce((acc, reminder) => {
       const key = `${reminder.userId}-${reminder.type}`;
       if (!acc[key]) {
@@ -25,12 +29,10 @@ async function checkReminders(client) {
       return acc;
     }, {});
 
-    const reminderIds = [];
     const sendPromises = [];
 
     for (const key in remindersToProcess) {
       const reminderData = remindersToProcess[key];
-      reminderIds.push(...reminderData.reminderIds);
 
       sendPromises.push((async () => {
         try {
@@ -86,10 +88,6 @@ async function checkReminders(client) {
     }
 
     await Promise.all(sendPromises);
-
-    if (reminderIds.length > 0) {
-      await Reminder.markAsSent(reminderIds);
-    }
 
   } catch (error) {
     console.error(`[SCHEDULER ERROR] ${error.message}`);
