@@ -29,6 +29,7 @@ async function processStaminaMessage(message) {
         { userId, type: 'stamina' },
         {
           userId,
+          guildId: message.guild.id,
           channelId: message.channel.id,
           remindAt,
           type: 'stamina',

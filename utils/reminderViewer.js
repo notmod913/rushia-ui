@@ -44,10 +44,13 @@ async function sendReminderPage(message, userId, page, filter, allReminders, int
     if (pageReminders.length === 0) {
         embed.setDescription('No reminders in this category');
     } else {
+        const now = Date.now();
         const lines = pageReminders.map(r => {
             const time = Math.floor(r.remindAt.getTime() / 1000);
             const emoji = typeEmojis[r.type] || '📌';
-            return `${emoji} <@${r.userId}> - <t:${time}:R>\n${r.reminderMessage}`;
+            const isExpired = r.remindAt.getTime() < now;
+            const expiredTag = isExpired ? ' **[EXPIRED]**' : '';
+            return `${emoji} <@${r.userId}> - <t:${time}:R>${expiredTag}\n${r.reminderMessage}`;
         });
         embed.setDescription(lines.join('\n\n'));
     }

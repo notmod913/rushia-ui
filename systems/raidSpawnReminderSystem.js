@@ -31,6 +31,7 @@ async function detectAndSetRaidSpawnReminder(message) {
 
   const result = await createReminderSafe({
     userId,
+    guildId: message.guild.id,
     channelId: message.channel.id,
     remindAt,
     type: 'raidSpawn',

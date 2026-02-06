@@ -71,6 +71,7 @@ async function processExpeditionMessage(message) {
 
     const result = await createReminderSafe({
       userId,
+      guildId: message.guild.id,
       cardId: card.cardId,
       channelId: message.channel.id,
       remindAt,

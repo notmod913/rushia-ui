@@ -25,9 +25,9 @@ reminderSchema.index({ userId: 1, type: 1, sent: 1 }, { name: 'idx_user_type' })
 // COMPOUND INDEX: Type + RemindAt (for type-specific queries)
 reminderSchema.index({ type: 1, remindAt: 1, sent: 1 }, { name: 'idx_type_time' });
 
-// TTL INDEX: Auto-delete sent reminders after 5 minutes
+// TTL INDEX: Auto-delete sent reminders after 1 minute
 reminderSchema.index({ sentAt: 1 }, { 
-  expireAfterSeconds: 300, 
+  expireAfterSeconds: 60, 
   partialFilterExpression: { sent: true },
   name: 'idx_ttl_sent'
 });
