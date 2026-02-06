@@ -1,6 +1,7 @@
 const Reminder = require('../database/Reminder');
 const { getUserSettings } = require('../utils/userSettingsManager');
 const { sendLog, sendError } = require('../utils/logger');
+const { checkExistingReminder, createReminderSafe } = require('../utils/reminderDuplicateChecker');
 
 const LUVI_ID = '1269481871021047891';
 
@@ -21,42 +22,41 @@ async function detectAndSetDropReminder(message) {
   const userId = iconUrl?.match(/avatars\/(\d+)\//)?.[1];
   if (!userId) return;
 
+  const existingReminder = await checkExistingReminder(userId, 'drop');
+  if (existingReminder) {
+    console.log(`[DROP] Duplicate prevented for user ${userId}`);
+    return;
+  }
+
   const oneHour = 60 * 60 * 1000;
   const remindAt = new Date(Date.now() + oneHour);
 
-  try {
-    await Reminder.create({
-      userId,
-      channelId: message.channel.id,
-      remindAt,
-      type: 'drop',
-      reminderMessage: `<@${userId}>, You can now use </drop:1464548731549384900> again!`
-    });
-    
-    await sendLog(`[DROP REMINDER SET] User: ${userId}, Channel: ${message.channel.id}, Message: ${message.url}`, {
+  const result = await createReminderSafe({
+    userId,
+    guildId: message.guild.id,
+    channelId: message.channel.id,
+    remindAt,
+    type: 'drop',
+    reminderMessage: `<@${userId}>, You can now use </drop:1464548731549384900> again!`
+  });
+
+  if (result.success) {
+    console.log(`[DROP REMINDER CREATED] User: ${userId}, Fires at: ${remindAt.toISOString()}`);
+    await sendLog(`[DROP REMINDER SET] User: ${userId}, Channel: ${message.channel.id}`, {
       category: 'DROP',
       userId,
       guildId: message.guild.id,
       channelId: message.channel.id
     });
-  } catch (error) {
-    if (error.code === 11000) {
-      await sendLog(`[DROP] Duplicate reminder skipped - User already has active reminder`, {
-        category: 'DROP',
-        userId,
-        guildId: message.guild.id,
-        channelId: message.channel.id,
-        reason: 'duplicate'
-      });
-    } else {
-      await sendError(`[DROP] Failed to create reminder: ${error.message}`, {
-        category: 'DROP',
-        userId,
-        guildId: message.guild.id,
-        channelId: message.channel.id,
-        error: error.stack
-      });
-    }
+  } else if (result.reason === 'duplicate') {
+    console.log(`[DROP] Duplicate prevented for user ${userId}`);
+  } else {
+    await sendError(`[DROP] Failed to create reminder: ${result.error.message}`, {
+      category: 'DROP',
+      userId,
+      guildId: message.guild.id,
+      error: result.error.stack
+    });
   }
 }
 
