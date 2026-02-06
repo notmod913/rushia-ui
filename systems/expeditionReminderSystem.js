@@ -46,7 +46,8 @@ async function processExpeditionMessage(message) {
 
   if (!expeditionInfo) return;
 
-  console.log(`[EXPEDITION] Parsed expedition info:`, expeditionInfo);
+  const cardSummary = expeditionInfo.cards.map(c => c.cardName).join(', ');
+  console.log(`[EXPEDITION] ${expeditionInfo.username}: ${expeditionInfo.cards.length} cards (${cardSummary})`);
 
   if (!userId && expeditionInfo?.username) {
     try {

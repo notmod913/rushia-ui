@@ -29,7 +29,10 @@ async function processBossMessage(message) {
     return;
   }
 
-  console.log(`[BOSS] Settings:`, { multiRoleEnabled: settings.multiRoleEnabled, bossRoleId: settings.bossRoleId, tier1: settings.tier1RoleId, tier2: settings.tier2RoleId, tier3: settings.tier3RoleId });
+  const roleConfig = settings.multiRoleEnabled 
+    ? `Multi-role: T1=${settings.tier1RoleId || 'none'}, T2=${settings.tier2RoleId || 'none'}, T3=${settings.tier3RoleId || 'none'}`
+    : `Single role: ${settings.bossRoleId || 'none'}`;
+  console.log(`[BOSS] ${roleConfig}`);
 
   let roleId = null;
   
