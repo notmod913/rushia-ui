@@ -7,6 +7,13 @@ async function handleReminderView(message) {
         return message.reply('❌ Only the bot owner can use this command.');
     }
 
+    // Delete old expired reminders (older than 1 hour and not sent)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    await Reminder.deleteMany({
+        remindAt: { $lt: oneHourAgo },
+        sent: { $ne: true }
+    });
+
     const reminders = await Reminder.find({
         sent: { $ne: true }
     }).sort({ remindAt: 1 });
@@ -33,11 +40,12 @@ async function sendReminderPage(message, userId, page, filter, allReminders, int
         expedition: '🗺️',
         stamina: '⚡',
         raid: '⚔️',
-        raidSpawn: '🔔'
+        raidSpawn: '🔔',
+        drop: '🎁'
     };
 
     const embed = new EmbedBuilder()
-        .setTitle(`📋 Active Reminders (${filter === 'all' ? 'All' : filter})`)
+        .setTitle(`📋 Active Reminders (${filter === 'all' ? 'All Types' : filter})`)
         .setColor(0x5865F2)
         .setFooter({ text: `Page ${page + 1}/${totalPages || 1}` });
 
@@ -55,11 +63,7 @@ async function sendReminderPage(message, userId, page, filter, allReminders, int
         embed.setDescription(lines.join('\n\n'));
     }
 
-    const filterButtons = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-            .setCustomId(`rem_all_${userId}_${page}_${filter}`)
-            .setLabel('All')
-            .setStyle(filter === 'all' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    const filterButtons1 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(`rem_expedition_${userId}_${page}_${filter}`)
             .setLabel('Expedition')
@@ -75,10 +79,14 @@ async function sendReminderPage(message, userId, page, filter, allReminders, int
         new ButtonBuilder()
             .setCustomId(`rem_raidSpawn_${userId}_${page}_${filter}`)
             .setLabel('Raid Spawn')
-            .setStyle(filter === 'raidSpawn' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+            .setStyle(filter === 'raidSpawn' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+        new ButtonBuilder()
+            .setCustomId(`rem_drop_${userId}_${page}_${filter}`)
+            .setLabel('Drop')
+            .setStyle(filter === 'drop' ? ButtonStyle.Primary : ButtonStyle.Secondary)
     );
 
-    const paginationButtons = new ActionRowBuilder().addComponents(
+    const filterButtons2 = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
             .setCustomId(`rem_prev_${userId}_${page}_${filter}`)
             .setLabel('◀')
@@ -91,7 +99,7 @@ async function sendReminderPage(message, userId, page, filter, allReminders, int
             .setDisabled(page >= totalPages - 1)
     );
 
-    const payload = { embeds: [embed], components: [filterButtons, paginationButtons], allowedMentions: { parse: [] } };
+    const payload = { embeds: [embed], components: [filterButtons1, filterButtons2], allowedMentions: { parse: [] } };
     
     if (interaction) {
         await interaction.update(payload);
@@ -119,7 +127,7 @@ async function handleReminderInteraction(interaction) {
         sent: { $ne: true }
     }).sort({ remindAt: 1 });
 
-    if (['all', 'expedition', 'stamina', 'raid', 'raidSpawn'].includes(action)) {
+    if (['expedition', 'stamina', 'raid', 'raidSpawn', 'drop'].includes(action)) {
         filter = action;
         page = 0;
     } else if (action === 'prev') {
