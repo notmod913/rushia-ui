@@ -1,5 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const Reminder = require('../database/Reminder');
+const { getUserSettings } = require('./userSettingsManager');
 const { BOT_OWNER_ID } = require('../config/constants');
 
 async function handleReminderView(message) {
@@ -44,6 +45,14 @@ async function sendReminderPage(message, userId, page, filter, allReminders, int
         drop: '🎁'
     };
 
+    const typeNames = {
+        expedition: 'Expedition',
+        stamina: 'Stamina',
+        raid: 'Raid',
+        raidSpawn: 'Raid Spawn',
+        drop: 'Drop'
+    };
+
     const embed = new EmbedBuilder()
         .setTitle(`📋 Active Reminders (${filter === 'all' ? 'All Types' : filter})`)
         .setColor(0x5865F2)
@@ -53,14 +62,21 @@ async function sendReminderPage(message, userId, page, filter, allReminders, int
         embed.setDescription('No reminders in this category');
     } else {
         const now = Date.now();
-        const lines = pageReminders.map(r => {
+        const lines = await Promise.all(pageReminders.map(async r => {
             const time = Math.floor(r.remindAt.getTime() / 1000);
-            const emoji = typeEmojis[r.type] || '📌';
+            const typeName = typeNames[r.type] || r.type;
             const isExpired = r.remindAt.getTime() < now;
             const expiredTag = isExpired ? ' **[EXPIRED]**' : '';
-            return `${emoji} <@${r.userId}> - <t:${time}:R>${expiredTag}\n${r.reminderMessage}`;
-        });
-        embed.setDescription(lines.join('\n\n'));
+            
+            // Get DM status
+            const userSettings = await getUserSettings(r.userId);
+            const dmField = `${r.type}DM`;
+            const dmEnabled = userSettings?.[dmField] || false;
+            const dmStatus = dmEnabled ? '✅ DM' : '❌ DM';
+            
+            return `**${typeName}** | <@${r.userId}> - <t:${time}:R>${expiredTag} | ${dmStatus}`;
+        }));
+        embed.setDescription(lines.join('\n'));
     }
 
     const filterButtons1 = new ActionRowBuilder().addComponents(
