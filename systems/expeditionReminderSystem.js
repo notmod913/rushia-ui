@@ -6,6 +6,16 @@ const { checkExistingReminder, createReminderSafe } = require('../utils/reminder
 async function processExpeditionMessage(message) {
   if (!message.guild) return;
 
+  // Log all Luvi messages for debugging
+  if (message.author.id === '1269481871021047891') {
+    console.log(`[EXPEDITION DEBUG] Luvi message detected`);
+    console.log(`[EXPEDITION DEBUG] Has embeds: ${message.embeds.length > 0}`);
+    console.log(`[EXPEDITION DEBUG] Has components: ${message.components?.length > 0}`);
+    if (message.embeds.length > 0) {
+      console.log(`[EXPEDITION DEBUG] Embed title: ${message.embeds[0].title}`);
+    }
+  }
+
   let expeditionInfo = null;
   let userId = message.interaction?.user?.id;
 
@@ -44,7 +54,12 @@ async function processExpeditionMessage(message) {
     }
   }
 
-  if (!expeditionInfo) return;
+  if (!expeditionInfo) {
+    if (message.author.id === '1269481871021047891' && (message.embeds.length > 0 || message.components?.length > 0)) {
+      console.log(`[EXPEDITION DEBUG] Failed to parse - not expedition format`);
+    }
+    return;
+  }
 
   const cardSummary = expeditionInfo.cards.map(c => c.cardName).join(', ');
   console.log(`[EXPEDITION] ${expeditionInfo.username}: ${expeditionInfo.cards.length} cards (${cardSummary})`);
@@ -60,9 +75,11 @@ async function processExpeditionMessage(message) {
   }
 
   if (!userId) {
-    console.log(`[EXPEDITION] No userId found, skipping. Username: ${expeditionInfo?.username}`);
+    console.log(`[EXPEDITION WARNING] No userId found, skipping. Username: ${expeditionInfo?.username}`);
     return;
   }
+  
+  console.log(`[EXPEDITION SUCCESS] Parsed expedition for user ${userId} with ${expeditionInfo.cards.length} cards`);
 
   // Group cards by time (within 5 second window)
   const timeGroups = {};
@@ -108,10 +125,11 @@ async function processExpeditionMessage(message) {
       const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
       const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-      console.log(`[EXPEDITION REMINDER CREATED] User: ${userId}, ${group.cards.length} card(s), In: ${hours}h ${minutes}m ${seconds}s`);
+      console.log(`[EXPEDITION REMINDER CREATED ✅] User: ${userId}, ${group.cards.length} card(s), In: ${hours}h ${minutes}m ${seconds}s`);
     } else if (result.reason === 'duplicate') {
-      console.log(`[EXPEDITION] Duplicate prevented for user ${userId}`);
+      console.log(`[EXPEDITION DUPLICATE] Skipped for user ${userId}`);
     } else {
+      console.error(`[EXPEDITION ERROR] Failed to create reminder: ${result.error.message}`);
       await sendError(`[ERROR] Failed to create expedition reminder: ${result.error.message}`);
     }
   }

@@ -100,6 +100,9 @@ module.exports = {
 
         // Only process Luvi bot messages for game notifications
         if (message.author.id !== LUVI_BOT_ID) return;
+        
+        console.log(`[MESSAGE] Processing Luvi message in ${message.guild?.name || 'DM'}`);
+        console.log(`[MESSAGE] Embeds: ${message.embeds.length}, Components: ${message.components?.length || 0}`);
 
         await processStaminaMessage(message);
         await processExpeditionMessage(message);
