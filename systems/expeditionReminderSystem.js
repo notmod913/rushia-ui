@@ -101,10 +101,10 @@ async function processExpeditionMessage(message) {
     const group = timeGroups[timeKey];
     const cardNames = group.cards.map(c => c.cardName).join(', ');
     
-    // Use first card's ID as unique identifier
+    // Check if reminder already exists for this card
     const existingReminder = await checkExistingReminder(userId, 'expedition', group.cards[0].cardId);
     if (existingReminder) {
-      console.log(`[EXPEDITION] Duplicate prevented for user ${userId}`);
+      console.log(`[EXPEDITION DUPLICATE] Reminder already exists for user ${userId}, card ${group.cards[0].cardId}. Skipping.`);
       continue;
     }
 

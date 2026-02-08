@@ -47,14 +47,19 @@ async function checkReminders(client) {
               expedition: true,
               stamina: true,
               raid: true,
+              drop: true,
               staminaDM: false,
               expeditionDM: false,
+              dropDM: false,
+              raidSpawnDM: false,
               raidSpawnReminder: true
             });
           }
 
           const sendReminder = userSettings[reminderData.type] !== false;
           let sendInDm = false;
+
+          console.log(`[REMINDER CHECK] Type: ${reminderData.type}, User: ${reminderData.userId}, Enabled: ${sendReminder}`);
 
           if (reminderData.type === 'raid') {
             sendInDm = true;
@@ -67,6 +72,8 @@ async function checkReminders(client) {
           } else if (reminderData.type === 'drop') {
             sendInDm = userSettings?.dropDM;
           }
+
+          console.log(`[REMINDER CHECK] SendInDM: ${sendInDm}, Will send: ${sendReminder}`);
 
           if (sendReminder) {
             if (sendInDm) {

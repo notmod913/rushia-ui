@@ -23,7 +23,8 @@ module.exports = {
               { name: 'Expedition', value: 'expedition' },
               { name: 'Stamina', value: 'stamina' },
               { name: 'Raid', value: 'raid' },
-              { name: 'Raid Spawn Reminder', value: 'raidSpawnReminder' }
+              { name: 'Raid Spawn Reminder', value: 'raidSpawnReminder' },
+              { name: 'Drop', value: 'drop' }
             ))
         .addBooleanOption(option =>
           option.setName('enabled')

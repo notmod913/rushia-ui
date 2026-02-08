@@ -54,7 +54,7 @@ reminderSchema.index({ createdAt: 1, sent: 1 }, { name: 'idx_cleanup' });
 
 // Static method for atomic upsert (prevents race conditions)
 reminderSchema.statics.upsertReminder = async function(reminderData) {
-  const { userId, type, cardId } = reminderData;
+  const { userId, type, cardId, channelId, guildId, ...updateData } = reminderData;
   
   const filter = cardId 
     ? { userId, type, cardId, sent: false }
@@ -62,7 +62,10 @@ reminderSchema.statics.upsertReminder = async function(reminderData) {
   
   return await this.findOneAndUpdate(
     filter,
-    { $set: reminderData },
+    { 
+      $set: updateData,
+      $setOnInsert: { userId, type, cardId, channelId, guildId, createdAt: new Date() }
+    },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 };

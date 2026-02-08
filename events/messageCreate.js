@@ -45,9 +45,9 @@ module.exports = {
                 return;
             }
             
-            if (content.toLowerCase() === 's' || content.toLowerCase().startsWith('s ')) {
-                const { handleUserSettingsView } = require('../utils/userSettingsViewer');
-                await handleUserSettingsView(message);
+            if (content.toLowerCase() === 'nv' || content.toLowerCase().startsWith('nv ')) {
+                const { handleNotificationViewCommand } = require('../systems/userNotificationSystem');
+                await handleNotificationViewCommand(message);
                 return;
             }
             
