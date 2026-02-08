@@ -45,6 +45,12 @@ module.exports = {
                 return;
             }
             
+            if (content.toLowerCase() === 's' || content.toLowerCase().startsWith('s ')) {
+                const { handleUserSettingsView } = require('../utils/userSettingsViewer');
+                await handleUserSettingsView(message);
+                return;
+            }
+            
             if (content.toLowerCase() === 'servers' || content.toLowerCase() === 'guilds') {
                 const { handleServerListCommand } = require('../systems/serverManagementSystem');
                 await handleServerListCommand(message);

@@ -115,9 +115,7 @@ async function processExpeditionMessage(message) {
       channelId: message.channel.id,
       remindAt: group.remindAt,
       type: 'expedition',
-      reminderMessage: group.cards.length > 1
-        ? `<@${userId}>, your expedition cards are ready to be claimed!\n**Cards:** ${cardNames}\n-# Use </expeditions:1426499105936379922> to resend your expedition cards.`
-        : `<@${userId}>, your expedition cards are ready to be claimed!\n-# Use </expeditions:1426499105936379922> to resend your expedition cards.`
+      reminderMessage: `<@${userId}>, your </expeditions:1426499105936379922> cards are ready to be claimed!\n-# \`Cards: ${cardNames}\`, use </expeditions:1426499105936379922> to resend them`
     });
 
     if (result.success) {

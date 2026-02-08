@@ -64,6 +64,8 @@ async function checkReminders(client) {
             sendInDm = userSettings?.expeditionDM;
           } else if (reminderData.type === 'raidSpawn') {
             sendInDm = userSettings?.raidSpawnDM;
+          } else if (reminderData.type === 'drop') {
+            sendInDm = userSettings?.dropDM;
           }
 
           if (sendReminder) {
