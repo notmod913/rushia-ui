@@ -29,14 +29,29 @@ async function processRarityDrop(message) {
   try {
     const updateField = cardData.rarity === 'Legendary' ? 'legendary_count' : 'exotic_count';
     
-    const result = await RarityDrop.findOneAndUpdate(
-      { userId, guildId: message.guild.id },
-      {
-        $inc: { [updateField]: 1 },
-        $set: { droppedAt: new Date() }
-      },
-      { upsert: true, new: true }
-    );
+    let result;
+    let retries = 3;
+    
+    while (retries > 0) {
+      try {
+        result = await RarityDrop.findOneAndUpdate(
+          { userId, guildId: message.guild.id },
+          {
+            $inc: { [updateField]: 1 },
+            $set: { droppedAt: new Date() }
+          },
+          { upsert: true, new: true }
+        );
+        break;
+      } catch (err) {
+        if (err.code === 11000 && retries > 1) {
+          retries--;
+          await new Promise(resolve => setTimeout(resolve, 100));
+          continue;
+        }
+        throw err;
+      }
+    }
 
     console.log(`[RARITY] ${cardData.rarity} - ${cardData.cardName} by ${userId} in ${message.guild.name} (L:${result.legendary_count} E:${result.exotic_count})`);
 
