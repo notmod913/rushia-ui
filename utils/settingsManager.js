@@ -8,19 +8,24 @@ async function initializeSettings() {
     allSettings.forEach(settings => {
       CacheManager.setGuildSettings(settings.guildId, settings);
     });
-    await sendLog(`[INFO] Cached guild settings for ${allSettings.length} guilds.`);
+    await sendLog('SETTINGS_INITIALIZED', { 
+      category: 'SYSTEM',
+      action: 'SETTINGS_INITIALIZED',
+      guildCount: allSettings.length
+    });
   } catch (error) {
-    console.error(`[ERROR] Failed to initialize settings: ${error.message}`);
-    await sendError(`[ERROR] Failed to initialize settings: ${error.message}`);
+    await sendError('SETTINGS_INIT_FAILED', { 
+      category: 'SYSTEM',
+      action: 'SETTINGS_INIT_FAILED',
+      error: error.message
+    });
   }
 }
 
 async function getSettings(guildId) {
-  // Check cache first
   let settings = CacheManager.getGuildSettings(guildId);
   if (settings) return settings;
 
-  // Query database if not in cache
   try {
     settings = await BotSettings.findOne({ guildId });
     if (settings) {
@@ -28,7 +33,6 @@ async function getSettings(guildId) {
     }
     return settings;
   } catch (error) {
-    console.error(`[ERROR] Failed to get settings for guild ${guildId}: ${error.message}`);
     return null;
   }
 }
@@ -58,11 +62,10 @@ async function updateSettings(guildId, newSettings) {
     );
 
     CacheManager.setGuildSettings(guildId, updatedSettings);
-    await sendLog(`[INFO] Settings updated for guild ${guildId}`);
+    await sendLog(`Settings updated for guild ${guildId}`);
     return updatedSettings;
   } catch (error) {
-    console.error(`[ERROR] Failed to update settings for guild ${guildId}: ${error.message}`);
-    await sendError(`[ERROR] Failed to update settings for guild ${guildId}: ${error.message}`);
+    await sendError(`Failed to update settings for guild ${guildId}: ${error.message}`);
     return null;
   }
 }

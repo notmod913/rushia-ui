@@ -16,7 +16,7 @@ async function processStaminaMessage(message) {
       const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
       userId = referencedMessage.author.id;
     } catch (error) {
-      console.error('Error fetching referenced message:', error);
+      // Silent fail
     }
   }
 
@@ -41,10 +41,23 @@ async function processStaminaMessage(message) {
       await message.channel.send({
         content: `<@${userId}>, I'll remind you when your stamina is 10/10.`,
       });
-      console.log(`[STAMINA REMINDER CREATED] User: ${userId}, Fires at: ${remindAt.toISOString()}`);
+      await sendLog('REMINDER_CREATED', { 
+        category: 'REMINDER',
+        action: 'CREATED',
+        type: 'stamina',
+        userId, 
+        guildId: message.guild.id,
+        channelId: message.channel.id,
+        remindAt: remindAt.toISOString()
+      });
     } catch (error) {
-      console.error(`[ERROR] Failed to create stamina reminder: ${error.message}`, error);
-      await sendError(`[ERROR] Failed to create stamina reminder: ${error.message}`);
+      await sendError('REMINDER_CREATE_FAILED', { 
+        category: 'REMINDER',
+        action: 'CREATE_FAILED',
+        type: 'stamina',
+        userId,
+        error: error.message
+      });
     }
   }
 }

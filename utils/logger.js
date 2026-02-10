@@ -58,19 +58,11 @@ async function initializeLogsDB() {
 
     // Wire up connection event handlers to track state and flush pending logs on connect.
     logsConnection.on('connected', () => {
-      console.log('✅ Logs DB connected');
-      flushPendingLogs().catch(err => {
-        // Log to console because DB logging may be unreliable here.
-        console.error('Error flushing pending logs:', err);
-      });
+      flushPendingLogs().catch(() => {});
     });
 
     logsConnection.on('error', (err) => {
-      console.error('Logs DB connection error:', err);
-    });
-
-    logsConnection.on('disconnected', () => {
-      console.warn('Logs DB disconnected');
+      saveLogToDB('ERROR', `Logs DB error: ${err.message}`).catch(() => {});
     });
 
     // If connection is already ready (openUri awaited), flush pending logs now.
@@ -78,7 +70,7 @@ async function initializeLogsDB() {
       await flushPendingLogs();
     }
   } catch (error) {
-    console.error('Failed to initialize logs database:', error);
+    // Silent fail - can't log to DB if DB init failed
   }
 }
 
@@ -94,8 +86,7 @@ async function flushPendingLogs() {
     // Use insertMany for efficiency; unordered so one failing doc won't stop others.
     await Log.insertMany(docs, { ordered: false });
   } catch (error) {
-    // If some inserts fail, report and continue. We don't re-queue to avoid duplicates.
-    console.error('Failed to insert some pending logs:', error);
+    // Silent fail
   }
 }
 
@@ -108,9 +99,7 @@ async function saveLogToDB(level, message, metadata = {}) {
     if (pendingLogs.length < MAX_PENDING_LOGS) {
       pendingLogs.push(createLogDocument(level, message, metadata));
     } else if (pendingLogs.length === MAX_PENDING_LOGS) {
-      // Push a single notice that buffer is full, then stop pushing further logs.
       pendingLogs.push(createLogDocument('WARN', 'Pending logs buffer full - dropping further logs', {}));
-      console.warn('Logs buffer full — further logs will be dropped until DB reconnects.');
     }
     return;
   }
@@ -118,32 +107,38 @@ async function saveLogToDB(level, message, metadata = {}) {
   try {
     await Log.create(createLogDocument(level, message, metadata));
   } catch (error) {
-    console.error('Failed to save log to database:', error);
+    // Silent fail
   }
 }
 
 async function sendLog(message, metadata = {}) {
-  saveLogToDB('INFO', message, metadata).catch(() => {});
+  const logData = typeof message === 'string' && !metadata.category 
+    ? { message, ...metadata }
+    : { message, metadata };
+  
+  saveLogToDB('INFO', logData.message, logData.metadata || logData).catch(() => {});
 
   if (logWebhook) {
     try {
       await logWebhook.send(message);
     } catch (error) {
-      // Silent fail for webhook errors
-      console.error('Failed to send log webhook:', error);
+      // Silent fail
     }
   }
 }
 
 async function sendError(message, metadata = {}) {
-  saveLogToDB('ERROR', message, metadata).catch(() => {});
+  const logData = typeof message === 'string' && !metadata.category 
+    ? { message, ...metadata }
+    : { message, metadata };
+  
+  saveLogToDB('ERROR', logData.message, logData.metadata || logData).catch(() => {});
 
   if (errorWebhook) {
     try {
       await errorWebhook.send(message);
     } catch (error) {
-      // Silent fail for webhook errors
-      console.error('Failed to send error webhook:', error);
+      // Silent fail
     }
   }
 }

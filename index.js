@@ -66,9 +66,6 @@ for (const file of commandFiles) {
   const command = require(path.join(commandsPath, file));
   if (command.data && command.execute) {
     client.commands.set(command.data.name, command);
-    console.log(`Loaded command: ${command.data.name}`);
-  } else {
-    console.warn(`Skipped loading ${file}: missing data or execute`);
   }
 }
 
@@ -141,19 +138,13 @@ async function deployCommands(client) {
 
   const rest = new REST({ version: '10' }).setToken(process.env.BOT_TOKEN);
   
-  if (client && client.user) {
-    console.log(`🤖 Bot Name: ${client.user.username}`);
-  }
-
   try {
-    console.log(`🔄 Deploying ${commands.length} slash commands...`);
     await rest.put(
       Routes.applicationCommands(process.env.CLIENT_ID),
       { body: commands }
     );
-    console.log('✅ Successfully deployed slash commands.');
   } catch (error) {
-    console.error('❌ Failed to deploy commands:', error);
+    await sendError(`Failed to deploy commands: ${error.message}`);
     throw error;
   }
 }
@@ -177,7 +168,12 @@ async function deployCommands(client) {
     }, 24 * 60 * 60 * 1000); // Daily
 
   client.once(Events.ClientReady, async readyClient => {
-        await sendLog(`[${readyClient.user.username}] Bot logged in as ${readyClient.user.tag}`);
+        await sendLog('BOT_READY', { 
+          category: 'SYSTEM',
+          action: 'BOT_READY',
+          botTag: readyClient.user.tag,
+          botId: readyClient.user.id
+        });
         await initializeSettings();
         await initializeUserSettings();
         startScheduler(readyClient);
@@ -203,7 +199,7 @@ async function deployCommands(client) {
         updateActivity();
         setInterval(updateActivity, 20000);
         
-        console.log(`✅ ${readyClient.user.tag} is online and ready!`);
+
     });
 
     await client.login(process.env.BOT_TOKEN);

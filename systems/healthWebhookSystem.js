@@ -58,7 +58,6 @@ async function postOrEditEmbed() {
       
       const data = await response.json();
       messageId = data.id;
-      console.log('Health webhook posted:', messageId);
     } else {
       const webhookParts = webhookUrl.split('/');
       const webhookId = webhookParts[webhookParts.length - 2];
@@ -76,7 +75,7 @@ async function postOrEditEmbed() {
       }
     }
   } catch (error) {
-    console.error('Failed to post/edit health webhook:', error.message);
+    // Silent fail
   }
 }
 

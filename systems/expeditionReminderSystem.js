@@ -6,16 +6,6 @@ const { checkExistingReminder, createReminderSafe } = require('../utils/reminder
 async function processExpeditionMessage(message) {
   if (!message.guild) return;
 
-  // Log all Luvi messages for debugging
-  if (message.author.id === '1269481871021047891') {
-    console.log(`[EXPEDITION DEBUG] Luvi message detected`);
-    console.log(`[EXPEDITION DEBUG] Has embeds: ${message.embeds.length > 0}`);
-    console.log(`[EXPEDITION DEBUG] Has components: ${message.components?.length > 0}`);
-    if (message.embeds.length > 0) {
-      console.log(`[EXPEDITION DEBUG] Embed title: ${message.embeds[0].title}`);
-    }
-  }
-
   let expeditionInfo = null;
   let userId = message.interaction?.user?.id;
 
@@ -54,15 +44,7 @@ async function processExpeditionMessage(message) {
     }
   }
 
-  if (!expeditionInfo) {
-    if (message.author.id === '1269481871021047891' && (message.embeds.length > 0 || message.components?.length > 0)) {
-      console.log(`[EXPEDITION DEBUG] Failed to parse - not expedition format`);
-    }
-    return;
-  }
-
-  const cardSummary = expeditionInfo.cards.map(c => c.cardName).join(', ');
-  console.log(`[EXPEDITION] ${expeditionInfo.username}: ${expeditionInfo.cards.length} cards (${cardSummary})`);
+  if (!expeditionInfo) return;
 
   if (!userId && expeditionInfo?.username) {
     try {
@@ -70,16 +52,11 @@ async function processExpeditionMessage(message) {
       const member = members.first();
       if (member) userId = member.id;
     } catch (err) {
-      console.log(`[EXPEDITION] Failed to fetch member by username: ${expeditionInfo.username}`);
+      // Silent fail
     }
   }
 
-  if (!userId) {
-    console.log(`[EXPEDITION WARNING] No userId found, skipping. Username: ${expeditionInfo?.username}`);
-    return;
-  }
-  
-  console.log(`[EXPEDITION SUCCESS] Parsed expedition for user ${userId} with ${expeditionInfo.cards.length} cards`);
+  if (!userId) return;
 
   // Group cards by time (within 5 second window)
   const timeGroups = {};
@@ -101,12 +78,8 @@ async function processExpeditionMessage(message) {
     const group = timeGroups[timeKey];
     const cardNames = group.cards.map(c => c.cardName).join(', ');
     
-    // Check if reminder already exists for this card
     const existingReminder = await checkExistingReminder(userId, 'expedition', group.cards[0].cardId);
-    if (existingReminder) {
-      console.log(`[EXPEDITION DUPLICATE] Reminder already exists for user ${userId}, card ${group.cards[0].cardId}. Skipping.`);
-      continue;
-    }
+    if (existingReminder) continue;
 
     const result = await createReminderSafe({
       userId,
@@ -119,16 +92,24 @@ async function processExpeditionMessage(message) {
     });
 
     if (result.success) {
-      const timeRemaining = group.cards[0].remainingMillis;
-      const hours = Math.floor(timeRemaining / (1000 * 60 * 60));
-      const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000);
-      console.log(`[EXPEDITION REMINDER CREATED ✅] User: ${userId}, ${group.cards.length} card(s), In: ${hours}h ${minutes}m ${seconds}s`);
-    } else if (result.reason === 'duplicate') {
-      console.log(`[EXPEDITION DUPLICATE] Skipped for user ${userId}`);
-    } else {
-      console.error(`[EXPEDITION ERROR] Failed to create reminder: ${result.error.message}`);
-      await sendError(`[ERROR] Failed to create expedition reminder: ${result.error.message}`);
+      await sendLog('REMINDER_CREATED', { 
+        category: 'REMINDER',
+        action: 'CREATED',
+        type: 'expedition',
+        userId, 
+        guildId: message.guild.id,
+        channelId: message.channel.id,
+        cardCount: group.cards.length,
+        remindAt: group.remindAt.toISOString()
+      });
+    } else if (result.reason !== 'duplicate') {
+      await sendError('REMINDER_CREATE_FAILED', { 
+        category: 'REMINDER',
+        action: 'CREATE_FAILED',
+        type: 'expedition',
+        userId,
+        error: result.error.message
+      });
     }
   }
 }

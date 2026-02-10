@@ -8,19 +8,24 @@ async function initializeUserSettings() {
     allSettings.forEach(settings => {
       CacheManager.setUserSettings(settings.userId, settings);
     });
-    await sendLog(`[INFO] Cached user settings for ${allSettings.length} users.`);
+    await sendLog('USER_SETTINGS_INITIALIZED', { 
+      category: 'SYSTEM',
+      action: 'USER_SETTINGS_INITIALIZED',
+      userCount: allSettings.length
+    });
   } catch (error) {
-    console.error(`[ERROR] Failed to initialize user settings: ${error.message}`);
-    await sendError(`[ERROR] Failed to initialize user settings: ${error.message}`);
+    await sendError('USER_SETTINGS_INIT_FAILED', { 
+      category: 'SYSTEM',
+      action: 'USER_SETTINGS_INIT_FAILED',
+      error: error.message
+    });
   }
 }
 
 async function getUserSettings(userId) {
-  // Check cache first
   let settings = CacheManager.getUserSettings(userId);
   if (settings) return settings;
 
-  // Query database if not in cache
   try {
     settings = await UserNotificationSettings.findOne({ userId });
     if (settings) {
@@ -28,7 +33,6 @@ async function getUserSettings(userId) {
     }
     return settings;
   } catch (error) {
-    console.error(`[ERROR] Failed to get user settings for ${userId}: ${error.message}`);
     return null;
   }
 }
@@ -41,11 +45,10 @@ async function updateUserSettings(userId, newSettings) {
       { new: true, upsert: true }
     );
     CacheManager.setUserSettings(userId, updatedSettings);
-    await sendLog(`[INFO] User settings updated for user ${userId}`);
+    await sendLog(`User settings updated for user ${userId}`);
     return updatedSettings;
   } catch (error) {
-    console.error(`[ERROR] Failed to update user settings for ${userId}: ${error.message}`);
-    await sendError(`[ERROR] Failed to update user settings for ${userId}: ${error.message}`);
+    await sendError(`Failed to update user settings for ${userId}: ${error.message}`);
     return null;
   }
 }

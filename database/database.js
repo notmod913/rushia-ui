@@ -15,20 +15,11 @@ class DatabaseManager {
         w: 'majority',
         readPreference: 'primaryPreferred',
         bufferCommands: false,
-        autoIndex: false // Disable auto-indexing in production
+        autoIndex: false
       });
-
-      // Enable query logging in development
-      if (process.env.NODE_ENV === 'development') {
-        mongoose.set('debug', true);
-      }
-
-      console.log('✅ MongoDB connected with optimized settings');
-      console.log(`   - Pool size: 5-20 connections`);
-      console.log(`   - Read preference: primaryPreferred`);
-      console.log(`   - Retry writes: enabled`);
     } catch (error) {
-      console.error('❌ MongoDB connection failed:', error);
+      const { sendError } = require('../utils/logger');
+      await sendError(`MongoDB connection failed: ${error.message}`);
       throw error;
     }
   }
@@ -41,8 +32,6 @@ class DatabaseManager {
       const Drops = require('./Drops');
       const RarityDrop = require('./RarityDrop');
 
-      console.log('🔧 Creating database indexes...');
-
       await Promise.all([
         Reminder.createIndexes(),
         BotSettings.createIndexes(),
@@ -50,10 +39,9 @@ class DatabaseManager {
         Drops.createIndexes(),
         RarityDrop.createIndexes()
       ]);
-
-      console.log('✅ All indexes created successfully');
     } catch (error) {
-      console.error('❌ Failed to create indexes:', error);
+      const { sendError } = require('../utils/logger');
+      await sendError(`Failed to create indexes: ${error.message}`);
     }
   }
 
@@ -61,18 +49,14 @@ class DatabaseManager {
     const Reminder = require('./Reminder');
     
     try {
-      // Clean up old unsent reminders (older than 7 days)
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const result = await Reminder.deleteMany({ 
+      await Reminder.deleteMany({ 
         createdAt: { $lt: sevenDaysAgo },
         sent: false
       });
-      
-      if (result.deletedCount > 0) {
-        console.log(`🧹 Cleaned up ${result.deletedCount} old reminders`);
-      }
     } catch (error) {
-      console.error('❌ Cleanup failed:', error);
+      const { sendError } = require('../utils/logger');
+      await sendError(`Cleanup failed: ${error.message}`);
     }
   }
 
@@ -95,7 +79,6 @@ class DatabaseManager {
         poolSize: mongoose.connection.client.s.options.maxPoolSize
       };
     } catch (error) {
-      console.error('❌ Failed to get stats:', error);
       return null;
     }
   }
@@ -103,27 +86,18 @@ class DatabaseManager {
   static async disconnect() {
     try {
       await mongoose.disconnect();
-      console.log('✅ MongoDB disconnected');
     } catch (error) {
-      console.error('❌ Disconnect failed:', error);
+      const { sendError } = require('../utils/logger');
+      await sendError(`Disconnect failed: ${error.message}`);
     }
   }
 }
 
-// Handle connection events
-mongoose.connection.on('connected', () => {
-  console.log('📡 MongoDB connection established');
-});
-
 mongoose.connection.on('error', (err) => {
-  console.error('❌ MongoDB connection error:', err);
+  const { sendError } = require('../utils/logger');
+  sendError(`MongoDB connection error: ${err.message}`).catch(() => {});
 });
 
-mongoose.connection.on('disconnected', () => {
-  console.log('📡 MongoDB disconnected');
-});
-
-// Graceful shutdown
 process.on('SIGINT', async () => {
   await DatabaseManager.disconnect();
   process.exit(0);

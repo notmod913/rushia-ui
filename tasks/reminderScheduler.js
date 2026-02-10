@@ -36,10 +36,6 @@ async function checkReminders(client) {
 
       sendPromises.push((async () => {
         try {
-          const now = new Date();
-          const delayMs = now - reminderData.remindAt;
-          const timingInfo = delayMs < 0 ? `EARLY by ${Math.abs(delayMs)}ms` : `DELAYED by ${delayMs}ms`;
-          
           let userSettings = await getUserSettings(reminderData.userId);
           if (!userSettings) {
             const { updateUserSettings } = require('../utils/userSettingsManager');
@@ -59,8 +55,6 @@ async function checkReminders(client) {
           const sendReminder = userSettings[reminderData.type] !== false;
           let sendInDm = false;
 
-          console.log(`[REMINDER CHECK] Type: ${reminderData.type}, User: ${reminderData.userId}, Enabled: ${sendReminder}`);
-
           if (reminderData.type === 'raid') {
             sendInDm = true;
           } else if (reminderData.type === 'stamina') {
@@ -73,25 +67,44 @@ async function checkReminders(client) {
             sendInDm = userSettings?.dropDM;
           }
 
-          console.log(`[REMINDER CHECK] SendInDM: ${sendInDm}, Will send: ${sendReminder}`);
-
           if (sendReminder) {
             if (sendInDm) {
               const user = await client.users.fetch(reminderData.userId);
               if (user) {
                 await user.send(reminderData.reminderMessage);
-                console.log(`[REMINDER SENT] ${reminderData.type} to ${reminderData.userId} via DM | ${timingInfo}`);
+                await sendLog('REMINDER_SENT', { 
+                  category: 'REMINDER',
+                  action: 'SENT',
+                  type: reminderData.type,
+                  userId: reminderData.userId,
+                  guildId: reminderData.guildId,
+                  method: 'DM'
+                });
               }
             } else {
               const channel = await client.channels.fetch(reminderData.channelId);
               if (channel) {
                 await channel.send(reminderData.reminderMessage);
-                console.log(`[REMINDER SENT] ${reminderData.type} to ${reminderData.userId} in channel | ${timingInfo}`);
+                await sendLog('REMINDER_SENT', { 
+                  category: 'REMINDER',
+                  action: 'SENT',
+                  type: reminderData.type,
+                  userId: reminderData.userId,
+                  guildId: reminderData.guildId,
+                  channelId: reminderData.channelId,
+                  method: 'CHANNEL'
+                });
               }
             }
           }
         } catch (error) {
-          console.error(`[REMINDER ERROR] ${error.message}`);
+          await sendError('REMINDER_SEND_FAILED', { 
+            category: 'REMINDER',
+            action: 'SEND_FAILED',
+            type: reminderData.type,
+            userId: reminderData.userId,
+            error: error.message
+          });
         }
       })());
     }
@@ -99,7 +112,11 @@ async function checkReminders(client) {
     await Promise.all(sendPromises);
 
   } catch (error) {
-    console.error(`[SCHEDULER ERROR] ${error.message}`);
+    await sendError('SCHEDULER_ERROR', { 
+      category: 'SYSTEM',
+      action: 'SCHEDULER_ERROR',
+      error: error.message
+    });
   }
 }
 
