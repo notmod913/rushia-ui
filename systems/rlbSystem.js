@@ -5,6 +5,8 @@ const RarityDrop = require('../database/RarityDrop');
 async function handleRlbCommand(message) {
   const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
   const isOwner = message.author.id === BOT_OWNER_ID;
+  const isAdmin = message.member.permissions.has(PermissionFlagsBits.Administrator);
+  const canPaginate = isOwner || isAdmin;
 
   try {
     const guildId = message.guild.id;
@@ -17,9 +19,10 @@ async function handleRlbCommand(message) {
       return message.channel.send('📊 No drops tracked yet in this server.').catch(() => {});
     }
 
-    // Show top 10 for admins, paginated for owner
-    const limit = isOwner ? Math.min(allDroppers.length, 50) : 10;
-    const topDroppers = allDroppers.slice(0, limit);
+    // Show top 10 for regular users, paginated for admin/owner
+    const page = 0;
+    const perPage = 10;
+    const topDroppers = allDroppers.slice(page * perPage, (page + 1) * perPage);
     const totalDrops = allDroppers.reduce((sum, user) => sum + user.drop_count, 0);
 
     // Build leaderboard embed
@@ -39,12 +42,18 @@ async function handleRlbCommand(message) {
     const maxWidth = Math.max(maxDrops.toString().length, 5);
     for (let i = 0; i < topDroppers.length; i++) {
       const user = topDroppers[i];
-      const rank = `${i + 1}]`.padEnd(4, ' ');
+      const rank = `${(page * perPage) + i + 1}]`.padEnd(4, ' ');
       const drops = user.drop_count.toString().padStart(maxWidth, ' ');
       rankings += `\`${rank}\` • \`${drops}\` • <@${user.userId}>\n`;
     }
     embed.addFields({ name: '\u200b', value: rankings });
-    embed.setFooter({ text: `Participants: ${totalParticipants} | Total Drops: ${totalDrops}` });
+    
+    if (canPaginate) {
+      const totalPages = Math.ceil(allDroppers.length / perPage);
+      embed.setFooter({ text: `Page ${page + 1}/${totalPages} | Participants: ${totalParticipants} | Total Drops: ${totalDrops}` });
+    } else {
+      embed.setFooter({ text: `Participants: ${totalParticipants} | Total Drops: ${totalDrops}` });
+    }
 
     // Add buttons
     const rarityButton = new ButtonBuilder()
@@ -57,18 +66,25 @@ async function handleRlbCommand(message) {
       .setLabel('Reset')
       .setStyle(ButtonStyle.Danger)
       .setEmoji('🔄')
-      .setDisabled(!isOwner && !message.member.permissions.has(PermissionFlagsBits.Administrator));
+      .setDisabled(!isOwner && !isAdmin);
 
     const components = [rarityButton, resetButton];
 
-    // Add pagination for owner if more than 50 entries
-    if (isOwner && allDroppers.length > 50) {
-      const nextButton = new ButtonBuilder()
-        .setCustomId('rlb_next_0')
-        .setLabel('Next')
+    // Add pagination for admin/owner if more than 10 entries
+    if (canPaginate && allDroppers.length > perPage) {
+      const prevButton = new ButtonBuilder()
+        .setCustomId(`rlb_prev_${message.author.id}_${page}`)
+        .setLabel('◀')
         .setStyle(ButtonStyle.Secondary)
-        .setEmoji('▶️');
-      components.push(nextButton);
+        .setDisabled(page === 0);
+      
+      const nextButton = new ButtonBuilder()
+        .setCustomId(`rlb_next_${message.author.id}_${page}`)
+        .setLabel('▶')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled((page + 1) * perPage >= allDroppers.length);
+      
+      components.push(prevButton, nextButton);
     }
 
     const row = new ActionRowBuilder().addComponents(components);
@@ -280,3 +296,92 @@ async function handleCancelReset(interaction) {
 }
 
 module.exports = { handleRlbCommand, handleRarityButton, handleBackButton, handleResetButton, handleConfirmReset, handleCancelReset };
+
+
+async function handleRlbPagination(interaction) {
+  if (!interaction.customId.startsWith('rlb_')) return false;
+
+  const parts = interaction.customId.split('_');
+  const action = parts[1];
+  const userId = parts[2];
+  const currentPage = parseInt(parts[3]);
+
+  if (interaction.user.id !== userId) {
+    await interaction.reply({ content: 'Dont click 😭', ephemeral: true });
+    return true;
+  }
+
+  const BOT_OWNER_ID = process.env.BOT_OWNER_ID;
+  const isOwner = interaction.user.id === BOT_OWNER_ID;
+  const isAdmin = interaction.member.permissions.has(PermissionFlagsBits.Administrator);
+
+  if (!isOwner && !isAdmin) {
+    await interaction.reply({ content: '❌ Only admins can paginate.', ephemeral: true });
+    return true;
+  }
+
+  const guildId = interaction.guild.id;
+  const allDroppers = await Drops.find({ guildId }).sort({ drop_count: -1 });
+  
+  const perPage = 10;
+  const totalPages = Math.ceil(allDroppers.length / perPage);
+  let newPage = currentPage;
+
+  if (action === 'next') newPage = Math.min(currentPage + 1, totalPages - 1);
+  if (action === 'prev') newPage = Math.max(currentPage - 1, 0);
+
+  const topDroppers = allDroppers.slice(newPage * perPage, (newPage + 1) * perPage);
+  const totalDrops = allDroppers.reduce((sum, user) => sum + user.drop_count, 0);
+
+  const embed = new EmbedBuilder()
+    .setAuthor({ 
+      name: interaction.guild.name, 
+      iconURL: interaction.guild.iconURL({ dynamic: true }) 
+    })
+    .setTitle('🎴 Drop Leaderboard')
+    .setThumbnail('https://cdn.discordapp.com/attachments/1446564927983849593/1466067284530434181/image0.gif')
+    .setColor(0x0099ff);
+
+  let rankings = '`S.No` • `Drops` • `User`\n';
+  const maxDrops = Math.max(...topDroppers.map(u => u.drop_count));
+  const maxWidth = Math.max(maxDrops.toString().length, 5);
+  for (let i = 0; i < topDroppers.length; i++) {
+    const user = topDroppers[i];
+    const rank = `${(newPage * perPage) + i + 1}]`.padEnd(4, ' ');
+    const drops = user.drop_count.toString().padStart(maxWidth, ' ');
+    rankings += `\`${rank}\` • \`${drops}\` • <@${user.userId}>\n`;
+  }
+  embed.addFields({ name: '\u200b', value: rankings });
+  embed.setFooter({ text: `Page ${newPage + 1}/${totalPages} | Participants: ${allDroppers.length} | Total Drops: ${totalDrops}` });
+
+  const rarityButton = new ButtonBuilder()
+    .setCustomId(`view_rarity_drops_${userId}`)
+    .setLabel('Rare Drops')
+    .setStyle(ButtonStyle.Primary);
+
+  const resetButton = new ButtonBuilder()
+    .setCustomId(`reset_drops_${userId}`)
+    .setLabel('Reset')
+    .setStyle(ButtonStyle.Danger)
+    .setEmoji('🔄')
+    .setDisabled(!isOwner && !isAdmin);
+
+  const prevButton = new ButtonBuilder()
+    .setCustomId(`rlb_prev_${userId}_${newPage}`)
+    .setLabel('◀')
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled(newPage === 0);
+
+  const nextButton = new ButtonBuilder()
+    .setCustomId(`rlb_next_${userId}_${newPage}`)
+    .setLabel('▶')
+    .setStyle(ButtonStyle.Secondary)
+    .setDisabled((newPage + 1) * perPage >= allDroppers.length);
+
+  const row = new ActionRowBuilder().addComponents(rarityButton, resetButton, prevButton, nextButton);
+
+  await interaction.update({ embeds: [embed], components: [row] });
+  return true;
+}
+
+module.exports.handleRlbPagination = handleRlbPagination;

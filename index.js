@@ -21,10 +21,6 @@ app.post('/webhook/health', (req, res) => {
   res.json({ success: true, message: 'Webhook URL set' });
 });
 
-// Logs API
-const { router: logsRouter } = require('./systems/logsAPI');
-app.use('/api', logsRouter);
-
 app.listen(3001, () => console.log('Health check on port 3001'));
 
 if (process.env.HEALTH_WEBHOOK_URL) {
@@ -48,7 +44,7 @@ const { startScheduler } = require('./tasks/reminderScheduler');
 const { initializeSettings } = require('./utils/settingsManager');
 const { initializeUserSettings } = require('./utils/userSettingsManager');
 const DatabaseManager = require('./database/database');
-const { sendLog, sendError, initializeLogsDB } = require('./utils/logger');
+const { sendLog, sendError, initializeLogsDB, silenceConsole } = require('./utils/logger');
 const { handleCardInventorySystem } = require('./systems/cardInventorySystem');
 const { incrementCommandCount, startHealthPosting, setClient } = require('./systems/healthWebhookSystem');
 
@@ -169,6 +165,9 @@ async function deployCommands(client) {
     await DatabaseManager.createIndexes();
     await initializeLogsDB();
     
+    // Silence all console output after DB is ready
+    silenceConsole();
+    
     // Deploy commands before starting bot
     await deployCommands(client);
     
@@ -209,20 +208,20 @@ async function deployCommands(client) {
 
     await client.login(process.env.BOT_TOKEN);
   } catch (error) {
-    console.error('❌ Failed to start bot:', error);
+    await sendError(`Failed to start bot: ${error.message}`);
     process.exit(1);
   }
 })();
 
 // Global error handlers to prevent crashes
 process.on('unhandledRejection', (error) => {
-  console.error('[UNHANDLED REJECTION]', error);
+  sendError(`[UNHANDLED REJECTION] ${error.stack || error.message}`).catch(() => {});
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('[UNCAUGHT EXCEPTION]', error);
+  sendError(`[UNCAUGHT EXCEPTION] ${error.stack || error.message}`).catch(() => {});
 });
 
 client.on('error', (error) => {
-  console.error('[CLIENT ERROR]', error);
+  sendError(`[CLIENT ERROR] ${error.stack || error.message}`).catch(() => {});
 });

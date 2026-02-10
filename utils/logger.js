@@ -1,6 +1,5 @@
 const { WebhookClient } = require('discord.js');
 const mongoose = require('mongoose');
-const { addLog } = require('../systems/logsAPI');
 
 const logWebhook = process.env.LOG_WEBHOOK_URL ? new WebhookClient({ url: process.env.LOG_WEBHOOK_URL }) : null;
 const errorWebhook = process.env.ERROR_WEBHOOK_URL ? new WebhookClient({ url: process.env.ERROR_WEBHOOK_URL }) : null;
@@ -52,8 +51,8 @@ async function initializeLogsDB() {
       channelId: { type: String },
       metadata: { type: Object },
     });
-    // TTL index to expire logs after 30 days (2592000 seconds)
-    logSchema.index({ timestamp: 1 }, { expireAfterSeconds: 2592000 });
+    // TTL index to expire logs after 7 days (604800 seconds)
+    logSchema.index({ timestamp: 1 }, { expireAfterSeconds: 604800 });
 
     Log = logsConnection.model('Log', logSchema);
 
@@ -124,7 +123,6 @@ async function saveLogToDB(level, message, metadata = {}) {
 }
 
 async function sendLog(message, metadata = {}) {
-  addLog('INFO', metadata.category || 'GENERAL', message, metadata);
   saveLogToDB('INFO', message, metadata).catch(() => {});
 
   if (logWebhook) {
@@ -138,7 +136,6 @@ async function sendLog(message, metadata = {}) {
 }
 
 async function sendError(message, metadata = {}) {
-  addLog('ERROR', metadata.category || 'GENERAL', message, metadata);
   saveLogToDB('ERROR', message, metadata).catch(() => {});
 
   if (errorWebhook) {
@@ -152,13 +149,24 @@ async function sendError(message, metadata = {}) {
 }
 
 async function sendWarn(message, metadata = {}) {
-  addLog('WARN', metadata.category || 'GENERAL', message, metadata);
   saveLogToDB('WARN', message, metadata).catch(() => {});
 }
 
 async function sendDebug(message, metadata = {}) {
-  addLog('DEBUG', metadata.category || 'GENERAL', message, metadata);
   saveLogToDB('DEBUG', message, metadata).catch(() => {});
 }
 
-module.exports = { sendLog, sendError, sendWarn, sendDebug, initializeLogsDB };
+function silenceConsole() {
+  const noop = () => {};
+  const originalConsole = { log: console.log, error: console.error, warn: console.warn, info: console.info, debug: console.debug };
+  
+  console.log = (...args) => saveLogToDB('INFO', args.join(' ')).catch(noop);
+  console.info = (...args) => saveLogToDB('INFO', args.join(' ')).catch(noop);
+  console.error = (...args) => saveLogToDB('ERROR', args.join(' ')).catch(noop);
+  console.warn = (...args) => saveLogToDB('WARN', args.join(' ')).catch(noop);
+  console.debug = (...args) => saveLogToDB('DEBUG', args.join(' ')).catch(noop);
+  
+  return originalConsole;
+}
+
+module.exports = { sendLog, sendError, sendWarn, sendDebug, initializeLogsDB, silenceConsole };

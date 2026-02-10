@@ -86,7 +86,11 @@ module.exports = {
                     return;
                 }
                 
-                const { handleRarityButton, handleBackButton, handleResetButton, handleConfirmReset, handleCancelReset } = require('../systems/rlbSystem');
+                const { handleRarityButton, handleBackButton, handleResetButton, handleConfirmReset, handleCancelReset, handleRlbPagination } = require('../systems/rlbSystem');
+                if (interaction.customId.startsWith('rlb_')) {
+                    await handleRlbPagination(interaction);
+                    return;
+                }
                 if (interaction.customId.startsWith('view_rarity_drops_')) {
                     await handleRarityButton(interaction);
                     return;

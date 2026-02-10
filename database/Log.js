@@ -10,7 +10,7 @@ const logSchema = new mongoose.Schema({
   metadata: { type: Object }
 });
 
-// TTL index to auto-delete logs older than 30 days
-logSchema.index({ timestamp: 1 }, { expireAfterSeconds: 2592000 });
+// TTL index to auto-delete logs older than 7 days
+logSchema.index({ timestamp: 1 }, { expireAfterSeconds: 604800 });
 
 module.exports = mongoose.model('Log', logSchema, 'logs');
