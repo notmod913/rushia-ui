@@ -23,10 +23,7 @@ async function detectAndSetDropReminder(message) {
   if (!userId) return;
 
   const existingReminder = await checkExistingReminder(userId, 'drop');
-  if (existingReminder) {
-    console.log(`[DROP] Duplicate prevented for user ${userId}`);
-    return;
-  }
+  if (existingReminder) return;
 
   const oneHour = 60 * 60 * 1000;
   const remindAt = new Date(Date.now() + oneHour);
@@ -41,21 +38,22 @@ async function detectAndSetDropReminder(message) {
   });
 
   if (result.success) {
-    console.log(`[DROP REMINDER CREATED] User: ${userId}, Fires at: ${remindAt.toISOString()}`);
-    await sendLog(`[DROP REMINDER SET] User: ${userId}, Channel: ${message.channel.id}`, {
-      category: 'DROP',
-      userId,
+    await sendLog('REMINDER_CREATED', { 
+      category: 'REMINDER',
+      action: 'CREATED',
+      type: 'drop',
+      userId, 
       guildId: message.guild.id,
-      channelId: message.channel.id
+      channelId: message.channel.id,
+      remindAt: remindAt.toISOString()
     });
-  } else if (result.reason === 'duplicate') {
-    console.log(`[DROP] Duplicate prevented for user ${userId}`);
-  } else {
-    await sendError(`[DROP] Failed to create reminder: ${result.error.message}`, {
-      category: 'DROP',
+  } else if (result.reason !== 'duplicate') {
+    await sendError('REMINDER_CREATE_FAILED', { 
+      category: 'REMINDER',
+      action: 'CREATE_FAILED',
+      type: 'drop',
       userId,
-      guildId: message.guild.id,
-      error: result.error.stack
+      error: result.error.message
     });
   }
 }
