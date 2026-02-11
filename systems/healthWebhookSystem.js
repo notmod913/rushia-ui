@@ -47,14 +47,8 @@ async function createStatusEmbed() {
   const embed = new EmbedBuilder()
     .setTitle('📊 Bot Statistics')
     .setColor(0x5865F2)
-    .addFields(
-      { name: '🟢 Status', value: `Uptime: ${uptime}\nPing: ${ping}ms`, inline: true },
-      { name: '💾 Memory', value: `${memUsage} MB / ${memMax} MB`, inline: true },
-      { name: '📡 Database', value: `Guilds: ${dbStats?.guilds || 0}\nUsers: ${dbStats?.users || 0}`, inline: true },
-      { name: '⏰ Active Reminders', value: `Total: ${dbStats?.activeReminders || 0}\n${reminderText}`, inline: false },
-      { name: '🎮 Commands Used', value: commandCount.toString(), inline: true },
-      { name: '🔄 Last Updated', value: `<t:${Math.floor(Date.now() / 1000)}:R>`, inline: true }
-    );
+    .setDescription(`**🟢 Status**\nUptime: ${uptime} | Ping: ${ping}ms\n\n**💾 Memory**\n${memUsage} MB / ${memMax} MB\n\n**<:db:1471141805327126608> Database**\nGuilds: ${dbStats?.guilds || 0} | Users: ${dbStats?.users || 0}\nLatency: ${0}ms\n\n**⏰ Active Reminders (${dbStats?.activeReminders || 0})**\n${reminderText}\n\n**🎮 Commands Used**\n${commandCount}`)
+    .setFooter({ text: `Last Updated: ${new Date().toLocaleString()}` });
   
   return embed;
 }
@@ -137,11 +131,10 @@ module.exports = {
       
       const embed = await createStatusEmbed();
       
-      // Add ping info
-      const wsLatency = message.client.ws.ping;
-      embed.addFields(
-        { name: '🏓 Latency', value: `WS: ${wsLatency}ms\n<:db:1471141805327126608>: ${dbLatency}ms`, inline: true }
-      );
+      // Update database latency in description
+      const currentDesc = embed.data.description;
+      const updatedDesc = currentDesc.replace('Latency: 0ms', `Latency: ${dbLatency}ms`);
+      embed.setDescription(updatedDesc);
       
       await loading.edit({ content: null, embeds: [embed] });
     } catch (error) {
