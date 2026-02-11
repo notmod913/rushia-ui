@@ -20,19 +20,41 @@ async function createStatusEmbed() {
   const memMax = (process.memoryUsage().heapTotal / 1024 / 1024).toFixed(2);
   const ping = client ? client.ws.ping : 0;
   
+  // Get database stats
+  const DatabaseManager = require('../database/database');
+  const Reminder = require('../database/Reminder');
+  const dbStats = await DatabaseManager.getStats();
+  
+  // Get active reminders by type
+  const remindersByType = await Reminder.aggregate([
+    { $match: { sent: { $ne: true } } },
+    { $group: { _id: '$type', count: { $sum: 1 } } }
+  ]);
+  
+  const reminderCounts = remindersByType.reduce((acc, item) => {
+    acc[item._id] = item.count;
+    return acc;
+  }, {});
+  
+  const reminderText = [
+    `⚡ Stamina: ${reminderCounts.stamina || 0}`,
+    `🗺️ Expedition: ${reminderCounts.expedition || 0}`,
+    `⚔️ Raid: ${reminderCounts.raid || 0}`,
+    `🔔 Raid Spawn: ${reminderCounts.raidSpawn || 0}`,
+    `🎁 Drop: ${reminderCounts.drop || 0}`
+  ].join('\n');
+  
   const embed = new EmbedBuilder()
-    .setTitle('🤖 Bot Status Monitor')
-    .setColor(0x00ff00)
+    .setTitle('📊 Bot Statistics')
+    .setColor(0x5865F2)
     .addFields(
-      { name: 'Status', value: '🟢 Online', inline: true },
-      { name: 'Uptime', value: uptime, inline: true },
-      { name: 'Ping', value: `${ping}ms`, inline: true },
-      { name: 'Memory', value: `${memUsage} MB / ${memMax} MB`, inline: true },
-      { name: 'Commands Used', value: commandCount.toString(), inline: true },
-      { name: 'Database', value: '✅ Connected', inline: true },
-      { name: 'Last Updated', value: new Date().toLocaleString(), inline: false }
-    )
-    .setFooter({ text: 'Status Monitor' });
+      { name: '🟢 Status', value: `Uptime: ${uptime}\nPing: ${ping}ms`, inline: true },
+      { name: '💾 Memory', value: `${memUsage} MB / ${memMax} MB`, inline: true },
+      { name: '📡 Database', value: `Guilds: ${dbStats?.guilds || 0}\nUsers: ${dbStats?.users || 0}`, inline: true },
+      { name: '⏰ Active Reminders', value: `Total: ${dbStats?.activeReminders || 0}\n${reminderText}`, inline: false },
+      { name: '🎮 Commands Used', value: commandCount.toString(), inline: true },
+      { name: '🔄 Last Updated', value: `<t:${Math.floor(Date.now() / 1000)}:R>`, inline: true }
+    );
   
   return embed;
 }
