@@ -126,7 +126,26 @@ module.exports = {
       return message.reply('❌ Only bot owner can use this command');
     }
     
-    const embed = await createStatusEmbed();
-    return message.reply({ embeds: [embed] });
+    const loading = await message.reply('<a:loading:1471139633894133812>');
+    
+    try {
+      // Measure latencies
+      const Reminder = require('../database/Reminder');
+      const dbStart = Date.now();
+      await Reminder.findOne().limit(1);
+      const dbLatency = Date.now() - dbStart;
+      
+      const embed = await createStatusEmbed();
+      
+      // Add ping info
+      const wsLatency = message.client.ws.ping;
+      embed.addFields(
+        { name: '🏓 Latency', value: `WS: ${wsLatency}ms\n<:db:1471141805327126608>: ${dbLatency}ms`, inline: true }
+      );
+      
+      await loading.edit({ content: null, embeds: [embed] });
+    } catch (error) {
+      await loading.edit('❌ Failed to load stats');
+    }
   }
 };

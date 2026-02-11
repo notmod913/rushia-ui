@@ -71,12 +71,6 @@ module.exports = {
                 return;
             }
             
-            if (content.toLowerCase() === 'ping') {
-                const { handlePingCommand } = require('../commands/ping');
-                await handlePingCommand(message);
-                return;
-            }
-            
             const match = content.match(/^(f|find)\s+(.+)$/i);
             if (match) {
                 const cardSearch = require('../systems/cardSearchSystem');
@@ -106,9 +100,6 @@ module.exports = {
 
         // Only process Luvi bot messages for game notifications
         if (message.author.id !== LUVI_BOT_ID) return;
-        
-        console.log(`[MESSAGE] Processing Luvi message in ${message.guild?.name || 'DM'}`);
-        console.log(`[MESSAGE] Embeds: ${message.embeds.length}, Components: ${message.components?.length || 0}`);
 
         await processStaminaMessage(message);
         await processExpeditionMessage(message);
