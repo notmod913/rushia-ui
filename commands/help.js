@@ -8,26 +8,31 @@ const helpCategories = {
       { name: '📋 Admin Commands', value: 'Server configuration and role management', inline: true },
       { name: '👤 User Commands', value: 'Personal notification settings', inline: true },
       { name: '🔍 Card Search', value: 'Search through 1000+ cards', inline: true },
+      { name: '📊 Leaderboard', value: 'View drop statistics', inline: true },
       { name: '📦 Inventory Helper', value: 'Interactive inventory management', inline: true },
-      { name: '🔧 Auto Features', value: 'Automatic detection and reminders', inline: true },
-      { name: '💡 Tips', value: 'Helpful tips and tricks', inline: true }
+      { name: '🔧 Auto Features', value: 'Automatic detection and reminders', inline: true }
     ]
   },
   admin: {
     title: '📋 Admin Commands',
     description: '*Requires Manage Roles permission*',
     fields: [
-      { name: '/set-boss-role [role]', value: 'Set role to ping for all boss spawns (all tiers)' },
-      { name: '/view-settings', value: 'View current server configuration' }
+      { name: '/set-boss-role [role]', value: 'Set or remove role to ping for all boss spawns' },
+      { name: '/multi-roles enable', value: 'Enable separate roles for each boss tier (1, 2, 3)' },
+      { name: '/multi-roles disable', value: 'Use single role for all boss tiers' },
+      { name: '/multi-roles set-boss', value: 'Set role for specific tier (Tier 1/2/3)' },
+      { name: '/view-settings', value: 'View current boss role configuration' }
     ]
   },
   user: {
     title: '👤 User Commands',
     description: 'Manage your personal notification preferences',
     fields: [
-      { name: '/notifications view', value: 'View your personal notification settings' },
-      { name: '/notifications set', value: '**Types:**\n• expedition - Expedition completion reminders\n• stamina - Stamina refill reminders (100%)\n• raid - Raid fatigue recovery reminders\n• raidSpawnReminder - 30-minute raid spawn reminders' },
-      { name: '/dm enable/disable', value: '**Types:**\n• expedition - Get expedition reminders via DM\n• stamina - Get stamina reminders via DM' }
+      { name: '/notifications view', value: 'View your current notification settings' },
+      { name: '/notifications set', value: 'Enable/disable notifications\n**Types:** expedition, stamina, raid, raidSpawnReminder, drop' },
+      { name: '/dm enable <type>', value: 'Receive reminders via DM\n**Types:** expedition, stamina, raidSpawn, drop' },
+      { name: '/dm disable <type>', value: 'Receive reminders in channel instead of DM' },
+      { name: '/suggestion', value: 'Send a suggestion to the bot owner (max 1000 chars)' }
     ]
   },
   search: {
@@ -35,38 +40,39 @@ const helpCategories = {
     description: 'Search through 1000+ cards using mentions',
     fields: [
       { name: 'Usage', value: '`@bot f <query>` or `@bot find <query>`' },
-      { name: 'Examples', value: '• `@bot f naruto` - Find Naruto characters\n• `@bot find fire duelist` - Find fire duelist cards\n• `@bot f bleach ice` - Find ice cards from Bleach\n• `@bot find support light` - Find light support cards' },
-      { name: 'Multiple Results', value: 'Type number (1, 2, 3) to select' },
+      { name: 'Examples', value: '• `@bot f naruto` - Find Naruto characters\n• `@bot find fire duelist` - Find fire duelist cards\n• `@bot f bleach ice` - Find ice cards from Bleach' },
+      { name: 'Multiple Results', value: 'Type number (1, 2, 3) to select from results' },
       { name: 'Single Result', value: 'Shows card details directly' }
+    ]
+  },
+  leaderboard: {
+    title: '📊 Drop Leaderboard',
+    description: 'View server drop statistics and rankings',
+    fields: [
+      { name: 'Usage', value: '`rlb` or `@bot rlb`' },
+      { name: 'Features', value: '• Top 10 droppers with total drop counts\n• "Rare Drops" button for Exotic/Legendary stats\n• Admin/Owner can paginate and reset leaderboard' },
+      { name: 'Tracking', value: 'Automatically tracks all drops in your server' }
     ]
   },
   inventory: {
     title: '📦 Inventory Helper',
     description: 'Interactive inventory management system',
     fields: [
-      { name: 'How to Use', value: 'React with 🔍 on inventory embed to start' },
-      { name: 'Features', value: '• Select cards from dropdown\n• Add/remove cards to command\n• Configure filters (rarity, element, type, etc.)\n• Auto-updates when you change pages\n• Generates complete inventory command' },
-      { name: 'Command Builder', value: 'Build custom `inv` commands with multiple filters and card names' }
+      { name: '🔍 Command Builder', value: 'React with 🔍 to build custom inventory commands with card selections and filters' },
+      { name: '✏️ Card Scraper', value: 'React with ✏️ to extract and organize all cards by rarity from your inventory' },
+      { name: 'Features', value: '• Select cards from dropdown\n• Add/remove cards to command\n• Configure filters (rarity, element, type)\n• Auto-updates when you change pages' },
+      { name: 'Auto-React', value: 'Bot automatically reacts with 🔍 and ✏️ on inventory embeds' }
     ]
   },
   auto: {
     title: '🔧 Automatic Features',
     description: 'Features that work automatically in the background',
     fields: [
-      { name: 'Boss Detection', value: 'Auto-detects all tier boss spawns from Luvi bot' },
-      { name: 'Inventory Detection', value: 'Auto-reacts to inventory embeds with 📦 and 🔍' },
-      { name: 'Smart Reminders', value: 'Automatically sets reminders when you:\n• Run out of stamina (100-minute reminder)\n• Send cards on expeditions (completion reminders)\n• Get raid fatigue (recovery reminders)\n• Spawn a raid (30-minute reminder)' }
-    ]
-  },
-  tips: {
-    title: '💡 Tips & Tricks',
-    description: 'Helpful information to get the most out of the bot',
-    fields: [
-      { name: 'Role Management', value: 'Leave role parameter empty to remove ping roles' },
-      { name: 'DM Notifications', value: 'Raid reminders are always sent via DM' },
-      { name: 'Permissions', value: 'Bot requires permission to mention roles' },
-      { name: 'Settings', value: 'All personal settings are per-user across servers' },
-      { name: 'Support', value: 'Contact bot owner for bugs or suggestions' }
+      { name: 'Boss Detection', value: 'Auto-detects all tier boss spawns and pings configured roles' },
+      { name: 'Stamina Reminders', value: 'Auto-reminds when stamina refills to configured percentage' },
+      { name: 'Expedition Reminders', value: 'Auto-reminds when expeditions complete' },
+      { name: 'Raid Reminders', value: 'Reminds when raid fatigue recovers + 30-min spawn reminder' },
+      { name: 'Drop Tracking', value: 'Tracks all drops and rare drops (Exotic/Legendary)' }
     ]
   }
 };
@@ -94,9 +100,9 @@ module.exports = {
             { label: 'Admin Commands', value: 'admin', emoji: '📋', description: 'Server configuration' },
             { label: 'User Commands', value: 'user', emoji: '👤', description: 'Personal settings' },
             { label: 'Card Search', value: 'search', emoji: '🔍', description: 'Search cards' },
+            { label: 'Leaderboard', value: 'leaderboard', emoji: '📊', description: 'Drop statistics' },
             { label: 'Inventory Helper', value: 'inventory', emoji: '📦', description: 'Inventory tools' },
-            { label: 'Auto Features', value: 'auto', emoji: '🔧', description: 'Automatic features' },
-            { label: 'Tips & Tricks', value: 'tips', emoji: '💡', description: 'Helpful tips' }
+            { label: 'Auto Features', value: 'auto', emoji: '🔧', description: 'Automatic features' }
           ])
       );
 
@@ -128,3 +134,32 @@ async function handleHelpCategory(interaction) {
 }
 
 module.exports.handleHelpCategory = handleHelpCategory;
+
+async function handleHelpCommand(message) {
+  const embed = new EmbedBuilder()
+    .setTitle(helpCategories.overview.title)
+    .setDescription(helpCategories.overview.description)
+    .addFields(helpCategories.overview.fields)
+    .setColor(0x0099ff)
+    .setFooter({ text: 'Select a category from the dropdown below' });
+
+  const dropdown = new ActionRowBuilder()
+    .addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId(`help_category_${message.author.id}`)
+        .setPlaceholder('Select a help category')
+        .addOptions([
+          { label: 'Overview', value: 'overview', emoji: '🤖', description: 'Main help page' },
+          { label: 'Admin Commands', value: 'admin', emoji: '📋', description: 'Server configuration' },
+          { label: 'User Commands', value: 'user', emoji: '👤', description: 'Personal settings' },
+          { label: 'Card Search', value: 'search', emoji: '🔍', description: 'Search cards' },
+          { label: 'Leaderboard', value: 'leaderboard', emoji: '📊', description: 'Drop statistics' },
+          { label: 'Inventory Helper', value: 'inventory', emoji: '📦', description: 'Inventory tools' },
+          { label: 'Auto Features', value: 'auto', emoji: '🔧', description: 'Automatic features' }
+        ])
+    );
+
+  await message.reply({ embeds: [embed], components: [dropdown] });
+}
+
+module.exports.handleHelpCommand = handleHelpCommand;

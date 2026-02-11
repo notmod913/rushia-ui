@@ -19,6 +19,12 @@ module.exports = {
         if (!message.author.bot && message.mentions.has(client.user)) {
             const content = message.content.replace(`<@${client.user.id}>`, '').trim();
             
+            if (content.toLowerCase() === 'help') {
+                const { handleHelpCommand } = require('../commands/help');
+                await handleHelpCommand(message);
+                return;
+            }
+            
             if (content.toLowerCase() === 'logs') {
                 const { handleLogsCommand } = require('../commands/logs');
                 await handleLogsCommand(message);
