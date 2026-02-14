@@ -102,7 +102,7 @@ async function processExpeditionMessage(message) {
       channelId: message.channel.id,
       remindAt: group.remindAt,
       type: 'expedition',
-      reminderMessage: `<@${userId}>, your </expeditions:1426499105936379922> cards are ready to be claimed!\n-# \`Cards: ${cardNames}\`, use </expeditions:1426499105936379922> to resend them`
+      reminderMessage: `<@${userId}>, your </expeditions:1472170030337626153> cards are ready to be claimed!\n-# \`Cards: ${cardNames}\`, use </expeditions:1472170030337626153> to resend them`
     });
 
     if (result.success) {
