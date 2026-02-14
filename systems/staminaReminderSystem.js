@@ -33,7 +33,7 @@ async function processStaminaMessage(message) {
           channelId: message.channel.id,
           remindAt,
           type: 'stamina',
-          reminderMessage: `<@${userId}>, your stamina has reached 10/10 \n use </clash:1426499105936379915>`
+          reminderMessage: `<@${userId}>, your stamina has reached 10/10 \n use </clash:1472170030228570113>`
         },
         { upsert: true, new: true }
       );
