@@ -34,7 +34,7 @@ async function detectAndSetDropReminder(message) {
     channelId: message.channel.id,
     remindAt,
     type: 'drop',
-    reminderMessage: `<@${userId}>, You can now use </drop:1464548731549384900> again!`
+    reminderMessage: `<@${userId}>, You can now use </drop:1472170029905874977> again!`
   });
 
   if (result.success) {
