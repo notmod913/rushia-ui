@@ -33,7 +33,7 @@ async function processRaidMessage(message) {
       channelId: message.channel.id,
       remindAt,
       type: 'raid',
-      reminderMessage: `<@${userId}>, your raid fatigue has worn off! use </raid attack:1404667045332910220> to attack the boss again.`
+      reminderMessage: `<@${userId}>, your raid fatigue has worn off! use </raid attack:1472170030723764364> to attack the boss again.`
     });
 
     if (result.success) {
