@@ -1,5 +1,4 @@
 const Reminder = require('../database/Reminder');
-const { getUserSettings } = require('../utils/userSettingsManager');
 const { sendLog, sendError } = require('../utils/logger');
 const { checkExistingReminder, createReminderSafe } = require('../utils/reminderDuplicateChecker');
 

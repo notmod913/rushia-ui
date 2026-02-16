@@ -4,6 +4,7 @@ const { processStaminaMessage } = require('../systems/staminaReminderSystem');
 const { processExpeditionMessage } = require('../systems/expeditionReminderSystem');
 const { processRaidMessage } = require('../systems/raidReminderSystem');
 const { processRaidSpawnMessage } = require('../systems/raidSpawnReminderSystem');
+const { processRaidWishlist } = require('../systems/raidWishlistSystem');
 const { processDropMessage } = require('../systems/dropSystem');
 const { processRarityDrop } = require('../systems/rarityDropSystem');
 const { processDropCount } = require('../systems/dropCountSystem');
@@ -18,6 +19,24 @@ module.exports = {
         // Handle bot mentions for card search and logs
         if (!message.author.bot && message.mentions.has(client.user)) {
             const content = message.content.replace(`<@${client.user.id}>`, '').trim();
+            
+            // Wishlist add command: @Bot wa name or @Bot wa name1,name2,name3
+            const waMatch = content.match(/^wa\s+(.+)$/i);
+            if (waMatch) {
+                const { handleWishlistAdd } = require('../systems/wishlistSystem');
+                await handleWishlistAdd(message, waMatch[1]);
+                return;
+            }
+            
+            // Wishlist view command: @Bot wl or @Bot wl @user or @Bot wl userId
+            const wlMatch = content.match(/^wl(?:\s+(?:<@!?(\d+)>|(\d+)))?$/i);
+            if (wlMatch) {
+                const { handleWishlistView } = require('../systems/wishlistSystem');
+                const targetId = wlMatch[1] || wlMatch[2];
+                const targetUser = targetId ? await client.users.fetch(targetId).catch(() => null) : null;
+                await handleWishlistView(message, targetUser);
+                return;
+            }
             
             if (content.toLowerCase() === 'help') {
                 const { handleHelpCommand } = require('../commands/help');
@@ -111,6 +130,7 @@ module.exports = {
         await processExpeditionMessage(message);
         await processRaidMessage(message);
         await processRaidSpawnMessage(message);
+        await processRaidWishlist(message);
         await processDropMessage(message);
         await processRarityDrop(message);
         await processDropCount(message);

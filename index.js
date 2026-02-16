@@ -156,9 +156,6 @@ async function deployCommands(client) {
     await DatabaseManager.createIndexes();
     await initializeLogsDB();
     
-    // Silence all console output after DB is ready
-    silenceConsole();
-    
     // Deploy commands before starting bot
     await deployCommands(client);
     
