@@ -18,6 +18,7 @@ async function handlePermsCheck(message) {
         { name: 'Read Message History', flag: PermissionsBitField.Flags.ReadMessageHistory, critical: true },
         { name: 'Mention Roles', flag: PermissionsBitField.Flags.MentionEveryone, critical: true },
         { name: 'Manage Messages', flag: PermissionsBitField.Flags.ManageMessages, critical: true },
+        { name: 'Create Instant Invite', flag: PermissionsBitField.Flags.CreateInstantInvite, critical: true },
         { name: 'Embed Links', flag: PermissionsBitField.Flags.EmbedLinks, critical: false },
         { name: 'Add Reactions', flag: PermissionsBitField.Flags.AddReactions, critical: false },
     ];

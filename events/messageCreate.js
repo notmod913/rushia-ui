@@ -96,6 +96,13 @@ module.exports = {
                 return;
             }
             
+            // Test command: @bot test
+            if (content.toLowerCase() === 'test') {
+                const { handleTestCommand } = require('../utils/testSimulator');
+                await handleTestCommand(message);
+                return;
+            }
+            
             const match = content.match(/^(f|find)\s+(.+)$/i);
             if (match) {
                 const cardSearch = require('../systems/cardSearchSystem');

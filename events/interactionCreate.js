@@ -66,6 +66,74 @@ module.exports = {
                 if (await handleNameSelect(interaction)) return;
                 if (await handleSelectField(interaction)) return;
                 if (await handleSelectFieldValue(interaction)) return;
+                
+                // Test simulator select menu handler
+                if (interaction.customId === 'test_select') {
+                    const TEST_OPTIONS = {
+                      'raid-wishlist-ping': { label: '🎯 Raid Wishlist Ping', fn: require('../utils/testSimulator').testRaidWishlistPing },
+                      'boss-tier-ping': { label: '👹 Boss Tier Ping', fn: require('../utils/testSimulator').testBossTierPing },
+                      'card-search': { label: '🔍 Card Search', fn: require('../utils/testSimulator').testCardSearch },
+                      'wishlist-view': { label: '📋 Wishlist View', fn: require('../utils/testSimulator').testWishlistView },
+                      'database-connection': { label: '🗄️ Database Connection', fn: require('../utils/testSimulator').testDatabaseConnection },
+                      'cache-performance': { label: '⚡ Cache Performance', fn: require('../utils/testSimulator').testCachePerformance }
+                    };
+                    
+                    const testKey = interaction.values[0];
+                    const test = TEST_OPTIONS[testKey];
+                    const { EmbedBuilder } = require('discord.js');
+                    const { createResultEmbed } = require('../utils/testSimulator');
+                    
+                    if (!test) {
+                      return interaction.reply({ content: '❌ Test not found.', ephemeral: true });
+                    }
+                    
+                    await interaction.deferReply({ ephemeral: true });
+                    
+                    const runningEmbed = new EmbedBuilder()
+                      .setColor(0x0099ff)
+                      .setTitle(`🔄 ${test.label}`)
+                      .setDescription('Running test (2 iterations in progress)...')
+                      .addFields({ name: 'Status', value: '⏳ Please wait...', inline: false });
+                    
+                    await interaction.editReply({ embeds: [runningEmbed], ephemeral: true });
+                    
+                    try {
+                      console.log(`[TEST] Starting: ${test.label}`);
+                      const startTime = Date.now();
+                      
+                      // For raid wishlist ping, pass the user ID and send a ping message
+                      let result;
+                      if (testKey === 'raid-wishlist-ping') {
+                        // Send ping message first to test if it reaches the user
+                        await interaction.channel.send(`${interaction.user} 📍 **Testing Raid Wishlist Ping** - Simulating raid detection and ping system...`).catch(() => {});
+                        
+                        // Run the test with user's actual wishlist
+                        result = await test.fn(interaction.user.id);
+                        
+                        // Send another ping message to show test completed
+                        await interaction.channel.send(`${interaction.user} ✅ **Raid Wishlist Test Complete** - Check results below.`).catch(() => {});
+                      } else {
+                        result = await test.fn();
+                      }
+                      
+                      const totalTime = Date.now() - startTime;
+                      
+                      const resultEmbed = createResultEmbed(result);
+                      resultEmbed.addFields({ name: '⏱️ Test Execution Time', value: `${totalTime}ms`, inline: true });
+                      resultEmbed.setTimestamp();
+                      
+                      return interaction.editReply({ embeds: [resultEmbed], ephemeral: true });
+                    } catch (error) {
+                      console.error(`[TEST ERROR] ${test.label}:`, error);
+                      const errorEmbed = new EmbedBuilder()
+                        .setColor(0xaa0000)
+                        .setTitle(`❌ ${test.label} Failed`)
+                        .addFields({ name: 'Error', value: `\`\`\`${error.message}\`\`\`` })
+                        .setTimestamp();
+                      
+                      return interaction.editReply({ embeds: [errorEmbed], ephemeral: true });
+                    }
+                }
             } catch (error) {
                 console.error('Error handling string select menu:', error);
             }
