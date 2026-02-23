@@ -239,4 +239,64 @@ async function handleWishlistView(message, targetUser = null) {
   }
 }
 
-module.exports = { handleWishlistAdd, handleWishlistView };
+module.exports = { handleWishlistAdd, handleWishlistView, handleWishlistRemove };
+
+async function handleWishlistRemove(message, cardNames) {
+  try {
+    const allCards = getCards();
+    const { Wishlist: WishlistModel } = await initWishlistConnection();
+    
+    const namesToRemove = cardNames.split(',').map(n => n.trim()).filter(n => n);
+    const removed = [];
+    const notFound = [];
+    
+    let userWishlist = await WishlistModel.findById(message.author.id);
+    if (!userWishlist || !userWishlist.wl || userWishlist.wl.length === 0) {
+      await message.reply('❌ Your wishlist is empty.');
+      return;
+    }
+    
+    for (const name of namesToRemove) {
+      const card = allCards.find(c => c.name.toLowerCase() === name.toLowerCase());
+      if (card) {
+        const initialLength = userWishlist.wl.length;
+        userWishlist.wl = userWishlist.wl.filter(c => c.n.toLowerCase() !== card.name.toLowerCase());
+        if (userWishlist.wl.length < initialLength) {
+          removed.push(`${card.name} [${card.element}]`);
+        } else {
+          notFound.push(`${card.name} (not in your wishlist)`);
+        }
+      } else {
+        const suggestions = findSimilarCards(name, allCards);
+        if (suggestions.length > 0) {
+          notFound.push(`${name} (Did you mean: ${suggestions.join(', ')}?)`);
+        } else {
+          notFound.push(name);
+        }
+      }
+    }
+    
+    if (removed.length > 0) {
+      userWishlist.cardCount = userWishlist.wl.length;
+      userWishlist.updatedAt = new Date();
+      await userWishlist.save();
+      invalidateCache(message.author.id);
+    }
+    
+    const embed = new EmbedBuilder()
+      .setColor(removed.length > 0 ? 0x00ff00 : 0xff0000)
+      .setTitle('Wishlist Update');
+    
+    if (removed.length > 0) {
+      embed.addFields({ name: '✅ Removed', value: removed.join('\n'), inline: false });
+    }
+    if (notFound.length > 0) {
+      embed.addFields({ name: '❌ Not Found/Removed', value: notFound.join('\n'), inline: false });
+    }
+    
+    await message.reply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Wishlist remove error:', error);
+    await message.reply('❌ Error removing from wishlist.');
+  }
+}

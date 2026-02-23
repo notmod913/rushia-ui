@@ -38,6 +38,14 @@ module.exports = {
                 return;
             }
             
+            // Wishlist remove command: @Bot wr name or @Bot wr name1,name2,name3
+            const wrMatch = content.match(/^wr\s+(.+)$/i);
+            if (wrMatch) {
+                const { handleWishlistRemove } = require('../systems/wishlistSystem');
+                await handleWishlistRemove(message, wrMatch[1]);
+                return;
+            }
+            
             if (content.toLowerCase() === 'help') {
                 const { handleHelpCommand } = require('../commands/help');
                 await handleHelpCommand(message);
