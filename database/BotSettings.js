@@ -7,7 +7,8 @@ const botSettingsSchema = new mongoose.Schema({
   tier1RoleId: { type: String },
   tier2RoleId: { type: String },
   tier3RoleId: { type: String },
-  multiRoleEnabled: { type: Boolean, default: false, index: true }
+  multiRoleEnabled: { type: Boolean, default: false, index: true },
+  delays: { type: Map, of: Number, default: new Map() }
 }, { timestamps: false });
 
 module.exports = mongoose.model('BotSettings', botSettingsSchema, 'guilds');

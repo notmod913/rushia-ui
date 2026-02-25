@@ -1,6 +1,7 @@
 const { parseBossEmbed, parseBossComponent } = require('../utils/embedParser');
 const { getSettings } = require('../utils/settingsManager');
 const { sendLog, sendError } = require('../utils/logger');
+const { getRoleDelay } = require('../utils/roleDelayManager');
 const { PermissionsBitField } = require('discord.js');
 
 async function processBossMessage(message) {
@@ -82,8 +83,25 @@ async function processBossMessage(message) {
       }
 
       const content = `<@&${roleId}> **${bossInfo.tier} Boss Spawned!**\nBoss: **${bossInfo.bossName}**`;
-      await message.channel.send({ content, allowedMentions: { roles: [roleId] } });
-      await sendLog(`[BOSS DETECTED] ${bossInfo.bossName} (${bossInfo.tier}) in guild ${message.guild.name}`);
+      
+      // Check if there's a delay set for this role
+      const delayMs = getRoleDelay(settings, roleId);
+      
+      if (delayMs > 0) {
+        // Send after delay
+        setTimeout(() => {
+          message.channel.send({ content, allowedMentions: { roles: [roleId] } })
+            .catch(err => {
+              console.error(`[ERROR] Failed to send delayed boss ping: ${err.message}`, err);
+              sendError(`[ERROR] Failed to send delayed boss ping: ${err.message}`);
+            });
+        }, delayMs);
+        await sendLog(`[BOSS DETECTED] ${bossInfo.bossName} (${bossInfo.tier}) in guild ${message.guild.name} (delayed by ${delayMs}ms)`);
+      } else {
+        // Send immediately
+        await message.channel.send({ content, allowedMentions: { roles: [roleId] } });
+        await sendLog(`[BOSS DETECTED] ${bossInfo.bossName} (${bossInfo.tier}) in guild ${message.guild.name}`);
+      }
     } catch (err) {
       console.error(`[ERROR] Failed to send boss ping: ${err.message}`, err);
       await sendError(`[ERROR] Failed to send boss ping: ${err.message}`);

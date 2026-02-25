@@ -111,6 +111,22 @@ module.exports = {
                 return;
             }
             
+            // Role delay command: @bot delay [roleId] [time] or @bot d [roleId] [time]
+            const delayMatch = content.match(/^d(?:elay)?\s+(.+)$/i);
+            if (delayMatch) {
+                const { handleRoleDelay } = require('../utils/roleDelayManager');
+                const args = delayMatch[1].split(/\s+/);
+                await handleRoleDelay(message, args);
+                return;
+            }
+            
+            // View role delays: @bot delays or @bot viewdelays
+            if (content.toLowerCase() === 'delays' || content.toLowerCase() === 'viewdelays') {
+                const { handleViewDelays } = require('../utils/roleDelayManager');
+                await handleViewDelays(message);
+                return;
+            }
+            
             const match = content.match(/^(f|find)\s+(.+)$/i);
             if (match) {
                 const cardSearch = require('../systems/cardSearchSystem');
