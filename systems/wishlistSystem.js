@@ -277,26 +277,40 @@ async function handleWishlistSelection(message, selection) {
   }
   
   try {
-    const card = pending.matches[num - 1];
-    const exists = pending.wishlist.wl.some(c => c.n === card.name && c.e === card.element.toLowerCase());
-    
-    if (exists) {
-      await message.reply(`❌ **${card.name}** ${ELEMENT_EMOJIS[card.element.toLowerCase()] || card.element} is already in your wishlist.`);
-    } else {
-      pending.wishlist.wl.push({ n: card.name, e: card.element.toLowerCase() });
+    if (pending.action === 'remove') {
+      // Handle remove action
+      const cardToRemove = pending.matches[num - 1];
+      pending.wishlist.wl = pending.wishlist.wl.filter(c => c.n !== cardToRemove.n);
       pending.wishlist.cardCount = pending.wishlist.wl.length;
       pending.wishlist.updatedAt = new Date();
       await pending.wishlist.save();
       invalidateCache(message.author.id);
       
-      await message.reply(`✅ Added **${card.name}** ${ELEMENT_EMOJIS[card.element.toLowerCase()] || card.element} [${card.series}] to your wishlist!`);
+      const emoji = ELEMENT_EMOJIS[cardToRemove.e] || cardToRemove.e;
+      await message.reply(`✅ Removed **${cardToRemove.n}** ${emoji} from your wishlist!`);
+    } else {
+      // Handle add action
+      const card = pending.matches[num - 1];
+      const exists = pending.wishlist.wl.some(c => c.n === card.name && c.e === card.element.toLowerCase());
+      
+      if (exists) {
+        await message.reply(`❌ **${card.name}** ${ELEMENT_EMOJIS[card.element.toLowerCase()] || card.element} is already in your wishlist.`);
+      } else {
+        pending.wishlist.wl.push({ n: card.name, e: card.element.toLowerCase() });
+        pending.wishlist.cardCount = pending.wishlist.wl.length;
+        pending.wishlist.updatedAt = new Date();
+        await pending.wishlist.save();
+        invalidateCache(message.author.id);
+        
+        await message.reply(`✅ Added **${card.name}** ${ELEMENT_EMOJIS[card.element.toLowerCase()] || card.element} [${card.series}] to your wishlist!`);
+      }
     }
     
     pendingConfirmations.delete(message.author.id);
     return true;
   } catch (error) {
     console.error('Selection error:', error);
-    await message.reply('❌ Error adding card.');
+    await message.reply('❌ Error processing selection.');
     pendingConfirmations.delete(message.author.id);
     return true;
   }
@@ -304,6 +318,7 @@ async function handleWishlistSelection(message, selection) {
 
 async function handleWishlistRemove(message, cardNames) {
   try {
+    const allCards = getCards();
     const { Wishlist: WishlistModel } = await initWishlistConnection();
     
     const userWishlist = await WishlistModel.findById(message.author.id);
@@ -313,38 +328,59 @@ async function handleWishlistRemove(message, cardNames) {
     }
     
     const namesToRemove = cardNames.split(',').map(n => n.trim()).filter(n => n);
-    const removed = [];
-    const notFound = [];
     
-    for (const name of namesToRemove) {
-      const found = userWishlist.wl.find(c => c.n.toLowerCase() === name.toLowerCase());
-      if (found) {
-        userWishlist.wl = userWishlist.wl.filter(c => c.n.toLowerCase() !== name.toLowerCase());
-        removed.push(`${found.n} [${found.e.charAt(0).toUpperCase() + found.e.slice(1)}]`);
-      } else {
-        notFound.push(`${name} (not in your wishlist)`);
-      }
+    if (namesToRemove.length !== 1) {
+      await message.reply('❌ Please remove one card at a time for better accuracy.');
+      return;
     }
     
-    if (removed.length > 0) {
+    const name = namesToRemove[0];
+    
+    // Find matches in user's wishlist first
+    const wishlistMatches = userWishlist.wl.filter(c => 
+      c.n.toLowerCase().includes(name.toLowerCase())
+    );
+    
+    if (wishlistMatches.length === 0) {
+      await message.reply(`❌ No cards in your wishlist match "${name}".`);
+      return;
+    }
+    
+    if (wishlistMatches.length === 1) {
+      const cardToRemove = wishlistMatches[0];
+      userWishlist.wl = userWishlist.wl.filter(c => c.n !== cardToRemove.n);
       userWishlist.cardCount = userWishlist.wl.length;
       userWishlist.updatedAt = new Date();
       await userWishlist.save();
       invalidateCache(message.author.id);
+      
+      const emoji = ELEMENT_EMOJIS[cardToRemove.e] || cardToRemove.e;
+      await message.reply(`✅ Removed **${cardToRemove.n}** ${emoji} from your wishlist!`);
+      return;
     }
     
+    // Multiple matches - show options
     const embed = new EmbedBuilder()
-      .setColor(removed.length > 0 ? 0x00ff00 : 0xff0000)
-      .setTitle('Wishlist Update');
-    
-    if (removed.length > 0) {
-      embed.addFields({ name: '✅ Removed', value: removed.join('\n'), inline: false });
-    }
-    if (notFound.length > 0) {
-      embed.addFields({ name: '❌ Not Found', value: notFound.join('\n'), inline: false });
-    }
+      .setColor(0xff6b6b)
+      .setTitle('Multiple cards found in your wishlist')
+      .setDescription(`Found ${wishlistMatches.length} cards. Reply with the number to remove:\n\n` +
+        wishlistMatches.map((c, i) => {
+          const emoji = ELEMENT_EMOJIS[c.e] || c.e;
+          return `**${i + 1}.** ${c.n} ${emoji}`;
+        }).join('\n'))
+      .setFooter({ text: 'Reply with 1, 2, 3... or "cancel"' });
     
     await message.reply({ embeds: [embed] });
+    
+    pendingConfirmations.set(message.author.id, {
+      matches: wishlistMatches,
+      wishlist: userWishlist,
+      action: 'remove',
+      timestamp: Date.now()
+    });
+    
+    setTimeout(() => pendingConfirmations.delete(message.author.id), 60000);
+    
   } catch (error) {
     console.error('Wishlist remove error:', error);
     await message.reply('❌ Error removing from wishlist.');
