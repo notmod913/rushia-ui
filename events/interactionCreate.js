@@ -187,6 +187,13 @@ module.exports = {
                 if (await handleNextSection(interaction)) return;
                 if (await handleFinishGenerator(interaction)) return;
                 if (await handlePagination(interaction)) return;
+                
+                // Wishlist pagination handler
+                const { handleWishlistPagination } = require('../systems/wishlistSystem');
+                if (interaction.customId.startsWith('wishlist_next_') || interaction.customId.startsWith('wishlist_prev_')) {
+                    await handleWishlistPagination(interaction);
+                    return;
+                }
             } catch (error) {
                 console.error('Error handling button:', error);
             }

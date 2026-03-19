@@ -213,8 +213,8 @@ async function handleWishlistAdd(message, cardNames) {
     if (multipleMatches.length > 0) {
       if (multipleMatches.length === 1 && namesToAdd.length === 1) {
         // Single query with multiple matches - show selection interface
-        const matches = multipleMatches[0].matches;
-        const displayLimit = 5;
+        const matches = findSimilarCards(multipleMatches[0].name, allCards);
+        const displayLimit = 10;
         const totalMatches = matches.length;
         const displayMatches = matches.slice(0, displayLimit);
         const hasMore = totalMatches > displayLimit;
@@ -235,7 +235,7 @@ async function handleWishlistAdd(message, cardNames) {
           const row = new ActionRowBuilder()
             .addComponents(
               new ButtonBuilder()
-                .setCustomId('wishlist_next')
+                .setCustomId(`wishlist_next_${message.author.id}`)
                 .setLabel('Next →')
                 .setStyle(ButtonStyle.Primary)
             );
@@ -250,6 +250,7 @@ async function handleWishlistAdd(message, cardNames) {
           wishlist: userWishlist,
           page: 0,
           totalPages: Math.ceil(totalMatches / displayLimit),
+          displayLimit: displayLimit,
           timestamp: Date.now()
         });
         
@@ -395,15 +396,21 @@ async function handleWishlistSelection(message, selection) {
 }
 
 async function handleWishlistPagination(interaction) {
+  const userId = interaction.customId.split('_')[2];
+  if (interaction.user.id !== userId) {
+    await interaction.reply({ content: '❌ This is not your selection menu.', ephemeral: true });
+    return;
+  }
+  
   const pending = pendingConfirmations.get(interaction.user.id);
   if (!pending || !pending.matches) {
     await interaction.reply({ content: '❌ Selection expired.', ephemeral: true });
     return;
   }
   
-  const displayLimit = 5;
-  const isNext = interaction.customId === 'wishlist_next';
-  const isPrev = interaction.customId === 'wishlist_prev';
+  const displayLimit = pending.displayLimit || 10;
+  const isNext = interaction.customId.includes('_next_');
+  const isPrev = interaction.customId.includes('_prev_');
   
   if (isNext) {
     pending.page++;
@@ -433,7 +440,7 @@ async function handleWishlistPagination(interaction) {
   if (pending.page > 0) {
     row.addComponents(
       new ButtonBuilder()
-        .setCustomId('wishlist_prev')
+        .setCustomId(`wishlist_prev_${interaction.user.id}`)
         .setLabel('← Previous')
         .setStyle(ButtonStyle.Primary)
     );
@@ -442,7 +449,7 @@ async function handleWishlistPagination(interaction) {
   if (endIndex < pending.matches.length) {
     row.addComponents(
       new ButtonBuilder()
-        .setCustomId('wishlist_next')
+        .setCustomId(`wishlist_next_${interaction.user.id}`)
         .setLabel('Next →')
         .setStyle(ButtonStyle.Primary)
     );
